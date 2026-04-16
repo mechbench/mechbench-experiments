@@ -26,11 +26,12 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from gemma4_mlx_interp import (  # noqa: E402
-    BIG_SWEEP_96, Model,
+    Model,
     centroid_decode, cluster_purity, cosine_matrix, fact_vectors_at,
     intra_inter_separation, nearest_neighbor_purity,
     pca_scatter, silhouette_cosine, similarity_heatmap,
 )
+from experiments.prompts import BIG_SWEEP_96  # noqa: E402
 
 OUT_DIR = ROOT / "caches"
 PROJECT_LAYER = 30

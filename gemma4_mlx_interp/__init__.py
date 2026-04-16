@@ -77,11 +77,6 @@ from .plot import (
     similarity_heatmap,
 )
 from .prompts import (
-    BIG_SWEEP_96,
-    FACTUAL_15,
-    STRESS_CREATIVE,
-    STRESS_CROSS_LINGUAL,
-    STRESS_TEMPLATE_VAR,
     Prompt,
     PromptSet,
     ValidatedPrompt,
@@ -101,16 +96,11 @@ __all__ = [
     "Patch",
     "Intervention",
     "compose",
-    # Prompts
+    # Prompts (specific prompt collections live in experiments.prompts)
     "Prompt",
     "PromptSet",
     "ValidatedPrompt",
     "ValidatedPromptSet",
-    "FACTUAL_15",
-    "BIG_SWEEP_96",
-    "STRESS_TEMPLATE_VAR",
-    "STRESS_CROSS_LINGUAL",
-    "STRESS_CREATIVE",
     # Logit lens
     "logit_lens_final",
     "logit_lens_per_position",

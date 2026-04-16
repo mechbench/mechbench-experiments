@@ -8,7 +8,7 @@ Each prompt has subject (for fact_vectors position lookup) and category
 
 from __future__ import annotations
 
-from ._core import Prompt, PromptSet
+from gemma4_mlx_interp import Prompt, PromptSet
 
 BIG_SWEEP_96 = PromptSet(
     name="BIG_SWEEP_96",

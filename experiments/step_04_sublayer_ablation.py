@@ -26,8 +26,9 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from gemma4_mlx_interp import (  # noqa: E402
-    Ablate, FACTUAL_15, GLOBAL_LAYERS, Model, N_LAYERS,
+    Ablate, GLOBAL_LAYERS, Model, N_LAYERS,
 )
+from experiments.prompts import FACTUAL_15  # noqa: E402
 
 OUT_DIR = ROOT / "caches"
 

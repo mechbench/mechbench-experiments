@@ -25,8 +25,9 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from gemma4_mlx_interp import (  # noqa: E402
-    BIG_SWEEP_96, Model, PromptSet, centroid_decode, fact_vectors_at,
+    Model, PromptSet, centroid_decode, fact_vectors_at,
 )
+from experiments.prompts import BIG_SWEEP_96  # noqa: E402
 
 # The five original step_10 categories. step_11 used these specifically;
 # the bigger 12-category sweep is in step_12.

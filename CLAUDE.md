@@ -51,7 +51,7 @@ Public surface (everything below is re-exported from the top-level package):
 
 - **Forward + hooks:** `Model.load()`, `Model.run(input_ids, hooks={}, capture=[])`, `ActivationCache`. The hook-aware forward pass with 294 named hook points (`blocks.{i}.resid_pre/mid/post/attn_out/mlp_out/gate_out/attn.weights/attn.per_head_out`). TransformerLens-style callback contract.
 - **Declarative interventions:** `Ablate` / `Capture` / `Patch`, plus `compose`. Pass a list as `interventions=[...]` to `Model.run`. Multiple interventions on the same hook point chain in declaration order.
-- **Prompt tooling:** `Prompt` / `PromptSet` / `validate`, the canonical prompt sets (`FACTUAL_15`, `BIG_SWEEP_96`, `STRESS_TEMPLATE_VAR/CROSS_LINGUAL/CREATIVE`).
+- **Prompt tooling:** `Prompt` / `PromptSet` / `validate` from the framework. The specific prompt collections used by this project's experiments (`FACTUAL_15`, `BIG_SWEEP_96`, `STRESS_TEMPLATE_VAR/CROSS_LINGUAL/CREATIVE`) live in `experiments/prompts/` since they're project data, not framework infrastructure.
 - **Analysis helpers:** `logit_lens_final` / `logit_lens_per_position`, `fact_vectors` / `fact_vectors_at`, `centroid_decode`, plus `cosine_matrix` / `cluster_purity` / `silhouette_cosine` / `nearest_neighbor_purity` / `intra_inter_separation`.
 - **Plot helpers:** `bar_by_layer`, `lens_trajectory`, `logprob_trajectory`, `position_heatmap`, `pca_scatter`, `similarity_heatmap`. Conventions baked in; every plot can still be hand-rolled.
 
@@ -73,7 +73,7 @@ result = model.run(ids, interventions=[                    # capture + ablation
 
 See `gemma4_mlx_interp/README.md` for the full API tour and worked examples.
 
-Smoke tests live next to the package: `python -m gemma4_mlx_interp._smoke` (forward path), `_smoke_interventions` (composition), `_smoke_analysis` (reproduces published findings 01/11/12 numbers), `_smoke_plots` (plot helpers vs synthetic data).
+Smoke tests for pure framework behavior live next to the package: `python -m gemma4_mlx_interp._smoke` (forward path), `_smoke_interventions` (composition), `_smoke_plots` (plot helpers vs synthetic data). The integration test that reproduces published findings 01/11/12 against this project's prompt collections is in `experiments/smoke_analysis.py`.
 
 ## Code style and conventions
 
@@ -105,18 +105,19 @@ gemma4-mlx-interp/
 │   ├── lens.py                # logit_lens_final / logit_lens_per_position
 │   ├── geometry.py            # fact_vectors / centroid_decode / stats
 │   ├── plot.py                # bar_by_layer / lens_trajectory / heatmaps / pca
-│   ├── prompts/               # Prompt + PromptSet + canonical sets
-│   │   ├── _core.py
-│   │   ├── factual.py         # FACTUAL_15
-│   │   ├── big_sweep.py       # BIG_SWEEP_96 (12 categories)
-│   │   └── stress.py          # STRESS_TEMPLATE_VAR / CROSS_LINGUAL / CREATIVE
+│   ├── prompts.py             # Prompt + PromptSet + ValidatedPromptSet + validate
 │   ├── errors.py              # InvalidHookName / CacheKeyError / etc.
 │   ├── _smoke.py              # Forward-path smoke test
 │   ├── _smoke_interventions.py  # Composition smoke test
-│   ├── _smoke_analysis.py     # Reproduces findings 01/11/12 numbers
 │   ├── _smoke_plots.py        # Plot helpers vs synthetic data
 │   └── README.md              # User-facing framework docs
-├── experiments/               # Numbered scripts using the framework
+├── experiments/               # Numbered scripts + project-specific data
+│   ├── prompts/               # Project-specific prompt collections
+│   │   ├── __init__.py
+│   │   ├── factual.py         # FACTUAL_15
+│   │   ├── big_sweep.py       # BIG_SWEEP_96 (12 categories)
+│   │   └── stress.py          # STRESS_TEMPLATE_VAR / CROSS_LINGUAL / CREATIVE
+│   ├── smoke_analysis.py      # Integration test: framework + prompts -> findings
 │   ├── step_01_logit_lens_batch.py
 │   ├── step_02_layer_ablation.py
 │   └── ...                    # through step_13_stress_tests.py

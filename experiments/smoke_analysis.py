@@ -1,36 +1,44 @@
-"""Smoke test for analysis helpers — prompts, lens, geometry.
+"""Integration test: framework + this project's prompt collections.
 
-Five integration checks against the model:
+Reproduces published numbers from findings 01, 11, and 12 to verify the
+combined pipeline (Model.run + Capture + logit_lens_* + fact_vectors_at +
+centroid_decode + geometry stats + the FACTUAL_15 / BIG_SWEEP_96 prompts)
+still works end-to-end.
 
-  1. PromptSet.validate on FACTUAL_15: should keep most/all 15 prompts (the
-     prompts were chosen because Gemma 4 E4B answers them confidently).
-  2. logit_lens_final on the Eiffel Tower prompt: rank should crash from
-     ~100k+ in early layers to 0 by layer 41 (the classic phase transition
-     from finding 01).
-  3. fact_vectors_at on a small sample of BIG_SWEEP_96: shapes correct,
-     extracted vectors have meaningful norms.
-  4. Centroid decoding of the BIG_SWEEP capital category at layer 30:
-     top tokens should include 'capital' or its multilingual equivalents
-     (per finding 12).
-  5. Geometry stats on the full BIG_SWEEP at layer 30: nearest-neighbor
-     same-category hit rate should be ~1.0; k-means-style cluster purity
-     should be ~1.0 (per finding 12).
+This lives in experiments/ rather than the framework because it exercises
+project-specific data alongside framework code. Pure framework smoke tests
+(forward path, intervention composition, plot helpers) live next to the
+package.
+
+Five checks against the model:
+
+  1. PromptSet.validate on FACTUAL_15: should keep most/all 15 prompts.
+  2. logit_lens_final on the Eiffel Tower prompt: rank crashes from ~100k+
+     in early layers to 0 by layer 41 (finding 01).
+  3. fact_vectors_at on a small BIG_SWEEP_96 sample: shapes + norms sane.
+  4. Centroid decoding of BIG_SWEEP capital category at layer 30: top
+     tokens include 'capital' or its multilingual equivalents (finding 12).
+  5. Full BIG_SWEEP at layer 30: NN same-category hit rate ~1.0,
+     k-means purity ~1.0 (finding 12).
 
 Run from project root with the venv active:
-    python -m gemma4_mlx_interp._smoke_analysis
+    python experiments/smoke_analysis.py
 """
 
 from __future__ import annotations
 
 import sys
 import time
+from pathlib import Path
 
 import numpy as np
 from sklearn.cluster import KMeans
 
-from . import (
-    BIG_SWEEP_96,
-    FACTUAL_15,
+ROOT = Path(__file__).resolve().parent.parent
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
+from gemma4_mlx_interp import (  # noqa: E402
     Capture,
     Model,
     centroid_decode,
@@ -42,6 +50,7 @@ from . import (
     nearest_neighbor_purity,
     silhouette_cosine,
 )
+from experiments.prompts import BIG_SWEEP_96, FACTUAL_15  # noqa: E402
 
 
 def main() -> int:

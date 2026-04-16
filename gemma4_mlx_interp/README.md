@@ -162,10 +162,10 @@ my_set = PromptSet(name="my_battery", prompts=(
 
 Fields are all optional except `text`. `subject` is a substring used by `fact_vectors` to pick which token's residual to extract. `category` is for grouped analyses. `metadata` is a free-form dict.
 
-Predefined sets you can import directly:
+This project's specific prompt collections live in `experiments/prompts/` (they're project data, not framework infrastructure):
 
 ```python
-from gemma4_mlx_interp import (
+from experiments.prompts import (
     FACTUAL_15,              # 15 prompts used by step_01-09
     BIG_SWEEP_96,            # 12 categories × 8 prompts (step_12)
     STRESS_TEMPLATE_VAR,     # 4 phrasings × 4 countries (step_13)
@@ -173,6 +173,8 @@ from gemma4_mlx_interp import (
     STRESS_CREATIVE,         # 8 subjective / metaphorical prompts (step_13)
 )
 ```
+
+If you're using `gemma4_mlx_interp` outside this project, you'd build your own `PromptSet` instances similarly.
 
 ### Validation
 
@@ -331,10 +333,15 @@ similarity_heatmap(vecs, labels)
 Four self-contained smoke tests live next to the package:
 
 ```bash
-python -m gemma4_mlx_interp._smoke                # forward path: semantic top-1 on FACTUAL_15-style prompts
+python -m gemma4_mlx_interp._smoke                # forward path: semantic top-1 on factual prompts
 python -m gemma4_mlx_interp._smoke_interventions  # composition: Ablate.head + Capture.per_head_out
-python -m gemma4_mlx_interp._smoke_analysis       # analysis: reproduces findings 01 / 11 / 12 numbers
 python -m gemma4_mlx_interp._smoke_plots          # plots: renders each helper on synthetic data
+```
+
+Plus an integration test in `experiments/smoke_analysis.py` (lives outside the framework because it depends on this project's specific prompt collections):
+
+```bash
+python experiments/smoke_analysis.py              # reproduces findings 01 / 11 / 12 numbers
 ```
 
 Run any of them after a framework change to catch regressions.
@@ -365,15 +372,11 @@ gemma4_mlx_interp/
 ├── lens.py           # logit_lens_final / logit_lens_per_position
 ├── geometry.py       # fact_vectors / centroid_decode / stats
 ├── plot.py           # 6 plot helpers
-├── prompts/
-│   ├── __init__.py
-│   ├── _core.py      # Prompt / PromptSet / ValidatedPromptSet / validate()
-│   ├── factual.py    # FACTUAL_15
-│   ├── big_sweep.py  # BIG_SWEEP_96
-│   └── stress.py     # STRESS_*
+├── prompts.py        # Prompt / PromptSet / ValidatedPromptSet / validate()
 ├── errors.py         # InvalidHookName / LayerIndexOutOfRange / CacheKeyError
 ├── _smoke.py                  # Forward-path smoke test
 ├── _smoke_interventions.py    # Composition smoke test
-├── _smoke_analysis.py         # Reproduce-findings smoke test
 └── _smoke_plots.py            # Plot-helpers smoke test
 ```
+
+Project-specific prompt collections (FACTUAL_15, BIG_SWEEP_96, STRESS_*) live alongside the experiments that use them, in `experiments/prompts/`. The integration test that reproduces published findings against those collections is `experiments/smoke_analysis.py`.

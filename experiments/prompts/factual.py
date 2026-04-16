@@ -8,7 +8,7 @@ here as the canonical answers).
 
 from __future__ import annotations
 
-from ._core import Prompt, PromptSet
+from gemma4_mlx_interp import Prompt, PromptSet
 
 FACTUAL_15 = PromptSet(
     name="FACTUAL_15",

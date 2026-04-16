@@ -28,11 +28,13 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from gemma4_mlx_interp import (  # noqa: E402
-    BIG_SWEEP_96, Model,
-    STRESS_CREATIVE, STRESS_CROSS_LINGUAL, STRESS_TEMPLATE_VAR,
+    Model,
     centroid_decode, fact_vectors_at,
 )
 from gemma4_mlx_interp.plot import DEFAULT_CATEGORY_COLORS  # noqa: E402
+from experiments.prompts import (  # noqa: E402
+    BIG_SWEEP_96, STRESS_CREATIVE, STRESS_CROSS_LINGUAL, STRESS_TEMPLATE_VAR,
+)
 
 OUT_DIR = ROOT / "caches"
 PROJECT_LAYER = 30
