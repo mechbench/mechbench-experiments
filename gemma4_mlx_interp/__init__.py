@@ -1,0 +1,87 @@
+"""gemma4_mlx_interp — a layered mechanistic-interpretability framework for
+Google's Gemma 4 E4B running locally on Apple Silicon via MLX.
+
+Quick start:
+
+    from gemma4_mlx_interp import Model
+
+    model = Model.load()
+    ids = model.tokenize("Complete this sentence with one word: The Eiffel Tower is in")
+
+    # Forward pass, no instrumentation:
+    result = model.run(ids)
+    for tok, p in result.top_k(model.tokenizer, k=5):
+        print(f'{tok!r:20s} p={p:.4f}')
+
+Capture activations:
+
+    result = model.run(ids, capture=['blocks.23.attn.weights',
+                                      'blocks.14.mlp_out'])
+    weights = result.cache['blocks.23.attn.weights']  # [1, 8, S, S], bf16
+    mlp = result.cache['blocks.14.mlp_out']           # [1, S, 2560], bf16
+
+Modify activations with a hook:
+
+    import mlx.core as mx
+
+    def zero_layer_14_mlp(act, info):
+        return mx.zeros_like(act)
+
+    result = model.run(ids, hooks={'blocks.14.mlp_out': zero_layer_14_mlp})
+
+L1 (declarative interventions like Ablate / Capture / Patch) and L2
+(prompts, lenses, geometry) are layered on top of these primitives and live
+in their own modules — see gemma4_mlx_interp.interventions etc. when those
+issues land.
+
+The full list of hook points is at gemma4_mlx_interp.all_hook_names().
+"""
+
+from ._arch import (
+    DEFAULT_MODEL_ID,
+    D_MODEL,
+    GLOBAL_LAYERS,
+    LAYER_HOOK_POINTS,
+    N_HEADS,
+    N_LAYERS,
+    VOCAB_SIZE,
+    all_hook_names,
+    layer_type,
+)
+from .cache import ActivationCache
+from .errors import (
+    CacheKeyError,
+    InterpError,
+    InvalidHookName,
+    LayerIndexOutOfRange,
+)
+from .hooks import HookFn, HookInfo, parse_hook_name
+from .model import Model, RunResult
+
+__version__ = "0.1.0"
+
+__all__ = [
+    # Main API
+    "Model",
+    "RunResult",
+    "ActivationCache",
+    # Hook types (for users writing callbacks)
+    "HookInfo",
+    "HookFn",
+    "parse_hook_name",
+    # Architecture facts
+    "DEFAULT_MODEL_ID",
+    "N_LAYERS",
+    "D_MODEL",
+    "N_HEADS",
+    "VOCAB_SIZE",
+    "GLOBAL_LAYERS",
+    "LAYER_HOOK_POINTS",
+    "layer_type",
+    "all_hook_names",
+    # Errors
+    "InterpError",
+    "InvalidHookName",
+    "LayerIndexOutOfRange",
+    "CacheKeyError",
+]

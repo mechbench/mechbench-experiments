@@ -1,0 +1,92 @@
+"""Hook-point types and name parsing.
+
+A hook point is a named moment in the model's forward pass at which the
+framework will (a) invoke any user-supplied callback and (b) optionally
+record the activation into the result's cache. This module defines the
+callback contract and the name-validation logic; the actual dispatch lives
+in _forward.py.
+
+The callback contract is intentionally TransformerLens-style: a function
+taking (activation, info) that may return either None (leave unchanged) or
+a replacement tensor. Returning a new tensor is how the user modifies
+forward-pass behavior — e.g. zeroing it out for ablations, swapping in a
+clean activation for causal tracing.
+"""
+
+from __future__ import annotations
+
+from dataclasses import dataclass
+from typing import Callable, Optional
+
+import mlx.core as mx
+
+from . import _arch
+from .errors import InvalidHookName, LayerIndexOutOfRange
+
+
+@dataclass(frozen=True)
+class HookInfo:
+    """Metadata passed to each hook callback alongside the activation tensor.
+
+    Attributes:
+        name: The full hook-point name, e.g. 'blocks.14.mlp_out'.
+        layer: The layer index for layer-scoped hooks; None for top-level hooks.
+        point: The point name within the layer, e.g. 'mlp_out'. For top-level
+            hooks, equal to the full name.
+    """
+
+    name: str
+    layer: Optional[int]
+    point: str
+
+
+# A hook callback. The function receives the activation tensor and a HookInfo
+# describing which point it's at, and returns either None (leave unchanged)
+# or an mx.array of identical shape and dtype that replaces it.
+HookFn = Callable[[mx.array, HookInfo], Optional[mx.array]]
+
+
+def parse_hook_name(name: str) -> HookInfo:
+    """Parse and validate a hook-point name.
+
+    Accepts top-level names (those in _arch.GLOBAL_HOOK_POINTS) and layer-
+    scoped names of the form 'blocks.{i}.{point}'. Raises InvalidHookName
+    on unrecognized names; raises LayerIndexOutOfRange if the layer index
+    is outside [0, N_LAYERS).
+    """
+    if name in _arch.GLOBAL_HOOK_POINTS:
+        return HookInfo(name=name, layer=None, point=name)
+
+    if name.startswith("blocks."):
+        rest = name[len("blocks."):]
+        # Split on the first '.'; the point may contain further dots
+        # (e.g. 'attn.weights'), which we don't want to split on.
+        try:
+            i_str, point = rest.split(".", 1)
+            layer_idx = int(i_str)
+        except ValueError:
+            raise InvalidHookName(name, _arch.all_hook_names())
+
+        if not (0 <= layer_idx < _arch.N_LAYERS):
+            raise LayerIndexOutOfRange(layer_idx, _arch.N_LAYERS)
+
+        if point not in _arch.LAYER_HOOK_POINTS:
+            raise InvalidHookName(name, _arch.all_hook_names())
+
+        return HookInfo(name=name, layer=layer_idx, point=point)
+
+    raise InvalidHookName(name, _arch.all_hook_names())
+
+
+def needs_attn_internals(hook_names: set[str]) -> bool:
+    """Return True iff any of the named hook points targets attention internals.
+
+    When True, the canonical forward pass must take the slower manual-softmax
+    path that exposes attention weights and per-head outputs. When False, the
+    fused scaled_dot_product_attention kernel is used (typical case).
+    """
+    for n in hook_names:
+        info = parse_hook_name(n)
+        if info.point in _arch.ATTN_INTERNAL_POINTS:
+            return True
+    return False
