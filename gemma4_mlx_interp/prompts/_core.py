@@ -85,15 +85,22 @@ class PromptSet:
         model,
         *,
         min_confidence: float = 0.5,
+        require_target_match: bool = True,
         verbose: bool = True,
     ) -> "ValidatedPromptSet":
         """Run each prompt through the model; keep ones that pass validation.
 
         A prompt PASSES if:
           - top-1 probability at the final position is >= min_confidence, AND
-          - if prompt.target is set, target is a case-insensitive substring of
-            the top-1 decoded token (or vice versa — handles common surface
-            variants like 'Paris' vs ' Paris' vs 'paris').
+          - if require_target_match is True AND prompt.target is set, the
+            target is a case-insensitive substring of the top-1 decoded token
+            (or vice versa, handling surface variants like 'Paris' vs ' Paris'
+            vs 'paris').
+
+        Pass require_target_match=False for geometric experiments where you
+        want to keep every prompt regardless of whether the model answers
+        correctly (e.g. step_13's stress tests, where the analysis is about
+        WHERE the representation lives, not whether the model is right).
 
         verbose=True prints a one-line OK/SKIP summary per prompt as it goes.
         """
@@ -114,7 +121,7 @@ class PromptSet:
 
             passes_conf = top1_prob >= min_confidence
             passes_target = True
-            if prompt.target is not None:
+            if require_target_match and prompt.target is not None:
                 t = prompt.target.lower()
                 tok = top1_tok.lower()
                 passes_target = t in tok or tok.strip() in t

@@ -30,10 +30,19 @@ from .interventions import Capture
 
 
 def _find_subject_position(token_labels: list[str], subject: str) -> int:
-    """Last token whose decoded label contains the subject substring."""
+    """Last token whose decoded label contains the subject substring,
+    or whose stripped form is itself contained in the subject (handles cases
+    like German genitive 'Frankreichs' which tokenizes as ' Frankreich' + 's').
+    """
     s = subject.lower()
+    # Pass 1: exact substring match (subject is in token).
     for i in range(len(token_labels) - 1, -1, -1):
         if s in token_labels[i].lower():
+            return i
+    # Pass 2: reverse — non-trivial token stripped is contained in subject.
+    for i in range(len(token_labels) - 1, -1, -1):
+        t = token_labels[i].strip().lower()
+        if len(t) >= 3 and t in s:
             return i
     raise ValueError(
         f"Subject substring {subject!r} not found in any token. "
