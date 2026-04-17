@@ -178,6 +178,43 @@ class _HeadAblation:
         return []
 
 
+class _PositionAdd:
+    """Add a vector (scaled by alpha) to the activation at one (layer, position).
+
+    The 'activation steering' / 'representation injection' operation common
+    in interp work: a single steering vector v gets added at one position,
+    leaving every other position untouched. v can be shape [d_model],
+    [seq_len, d_model], or [1, seq_len, d_model] — broadcasting works.
+    """
+
+    __slots__ = ("layer_idx", "position", "value", "alpha", "point")
+
+    def __init__(self, layer_idx: int, position: int, value: mx.array,
+                 alpha: float, point: str):
+        self.layer_idx = layer_idx
+        self.position = position
+        self.value = value
+        self.alpha = alpha
+        self.point = point
+
+    def as_hooks(self) -> dict[str, HookFn]:
+        v = self.value
+        pos = self.position
+        alpha = self.alpha
+
+        def hook(act, info):
+            seq_len = act.shape[1]
+            mask = mx.zeros((1, seq_len, 1), dtype=act.dtype)
+            mask = mask.at[:, pos, :].add(1.0)
+            # alpha * v * mask broadcasts to act's shape; nonzero only at pos
+            return act + (alpha * v * mask)
+
+        return {f"blocks.{self.layer_idx}.{self.point}": hook}
+
+    def as_captures(self) -> list[str]:
+        return []
+
+
 class _PositionPatch:
     """Replace the activation at one (layer, position) with a fixed tensor.
 
@@ -378,6 +415,36 @@ class Patch:
         return Patch.activation(
             layer=layer, position=position, value=source[key], point=point,
         )
+
+    @staticmethod
+    def add(
+        layer: int,
+        position: int,
+        value: mx.array,
+        *,
+        alpha: float = 1.0,
+        point: str = "resid_post",
+    ) -> Intervention:
+        """Add `alpha * value` to the activation at (layer, position).
+
+        Sibling to Patch.activation, but additive instead of replacing.
+        This is the canonical 'activation steering' / 'representation
+        injection' operation: take a steering vector (typically a category
+        centroid or a difference between two activations) and inject it
+        into a different prompt's residual stream to test whether it
+        steers the model's behavior.
+
+        `value` shape can be [d_model], [seq_len, d_model], or
+        [1, seq_len, d_model] — broadcasting works.
+
+        `alpha` is the steering scale; alpha=0 is a no-op, alpha=1 adds
+        the vector unchanged, larger values amplify.
+        """
+        if point not in ("resid_pre", "resid_post"):
+            raise ValueError(
+                f"point must be 'resid_pre' or 'resid_post', got {point!r}"
+            )
+        return _PositionAdd(layer, position, value, float(alpha), point)
 
 
 # ---------------------------------------------------------------------------

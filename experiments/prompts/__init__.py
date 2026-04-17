@@ -12,6 +12,13 @@ package supplies the specific instances we've curated.
 """
 
 from .big_sweep import BIG_SWEEP_96
+from .disambiguation import (
+    DISAMBIG_A1,
+    DISAMBIG_A2,
+    DISAMBIG_ALL,
+    DISAMBIG_B1,
+    DISAMBIG_B2,
+)
 from .factual import FACTUAL_15
 from .stress import STRESS_CREATIVE, STRESS_CROSS_LINGUAL, STRESS_TEMPLATE_VAR
 
@@ -21,4 +28,9 @@ __all__ = [
     "STRESS_TEMPLATE_VAR",
     "STRESS_CROSS_LINGUAL",
     "STRESS_CREATIVE",
+    "DISAMBIG_A1",
+    "DISAMBIG_A2",
+    "DISAMBIG_B1",
+    "DISAMBIG_B2",
+    "DISAMBIG_ALL",
 ]
