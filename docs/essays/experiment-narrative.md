@@ -374,3 +374,53 @@ None of these axes were asked for. Nobody told the model's residual stream that 
 One thing this result doesn't establish, which is worth naming. The self-consistency test shows each probe scores highest on its own training corpus, which is the trivial thing probes should do. It doesn't test whether the probes have learned the *concept* or the *corpus template*. A sharper test is whether the *happy* probe activates on a passage that evokes happiness without using any of the happy corpus's surface vocabulary, and whether each probe discriminates against vocabulary-matched distractors from other emotion classes. That's the concept-generalization test, and it's what the next experiment answers. (The categorical-geometry finding in section 11 suffered from the same confound risk; section 12 tested it, and it survived.)
 
 The other outcome worth noting from this section isn't the result itself — the result is, honestly, expected given the Anthropic paper. The interesting outcome is the framework surface that the experiment forced. We now have a `Probe` primitive — a persistent concept vector that carries its baseline mean and its PC-orthogonalizer alongside the concept direction, with a `.score()` method that applies it to any residual at any position in any prompt. Emotion is a concrete use case; sentiment, register, modality, or any other concept-direction workflow composes from the same machinery. That's the piece I was after when we started this direction. The paper's technique was the excuse; the primitive is the payoff.
+
+---
+
+## 18. Three Ways to Audit a Probe
+
+Section 17 ended on a caveat: the 6/6 diagonal on the training passages is the trivial thing a probe is supposed to do, because the probes were built from those passages in the first place. The real question is whether the resulting vectors are *concepts* — reusable directions that track emotion in general — or *corpus artifacts* that just encode whatever patterns happened to be characteristic of the 96 short passages I wrote. Three tests follow, from weakest to strongest evidence.
+
+**Test 1: what do the probes decode to through the tied unembed?**
+
+Project each probe's unit direction vector through Gemma 4's final RMSNorm and tied embedding and read off which tokens it most upweights and downweights. If the probes captured concepts, the upweighted tokens should be recognizable emotional vocabulary.
+
+Every probe's top-5 is coherent. `happy` decodes to *triumphant, celebratory, overjoyed, delighted, ecstatic*. `angry` to *grievance, aggrieved, frustrated*, plus `愤`, `😠`, `🤬`, `😡`. `afraid` to *alarmed, emergency, danger*, plus Chinese `紧急` (*urgent*) and Vietnamese `hiểm` (*dangerous*). `proud`'s top upweighted token across the whole set is Korean `자랑` (*pride, boasting*), ahead of English `proudly`. The multilingual decoding is exactly the pattern section 11 found at single-token subject positions: Gemma 4's tied embedding aligns cross-lingual equivalents of a concept to nearby regions, and any vector pointing into one of those regions decodes to all of them. The emotion-probe version of the same mechanism, now at passage scale.
+
+The DOWN directions carry psychological antipodes. `angry` and `afraid` down-weight positive-valence vocabulary (*joyful, welcomed, brighten*). `calm` down-weights high-arousal-negative vocabulary (*horrified, indignant, angrily, shocked, outraged*). The probes are directions, not just cluster centers, and their negative poles track the valence/arousal axis's opposite ends.
+
+One caveat is visible already, though it doesn't quite bite yet. `calm`'s top upweighted tokens are *atmospheric, ambient, moonlight, soothing* — scene vocabulary, not state vocabulary. Our 16 calm training passages were scene-heavy (lakes at dawn, tea at windowsills, rain on gardens), and the probe faithfully learned that. The probe is not wrong; it has learned a narrower concept than "calm in general." That observation is going to get more important two tests from now.
+
+**Test 2: do the probes discriminate implicit scenarios?**
+
+Twelve hand-written scenarios formatted as user turns, two per emotion, each evoking a target emotion via situation rather than vocabulary. Score each against all six probes. If the probes had merely memorized corpus surface forms, they would classify at chance (1/6 = 17%); if they learned concepts, the diagonal should hold.
+
+Nine of twelve, or **75% per-scenario accuracy**. The probes generalize.
+
+The single most-instructive failure: my two "happy" scenarios — a full-scholarship acceptance letter and buying a first house after eight years of saving — score higher on `proud` than on `happy`. Both are years-of-effort achievements; both are textbook pride-triggering situations. The probes are psychologically correct and my labels are naive. If I relabeled those two to `proud`, per-scenario accuracy would climb to 11/12. The probes are catching nuance my rough labels missed.
+
+One real mis-classification remains: a calm scenario (ending a silent retreat, extending the feeling before turning the phone back on) scores highest on `sad`. The probe reads the fragile-peace / about-to-end framing as melancholy rather than calm. Somewhat defensible, but the cleanest case of the probe-as-written missing a call a human would not miss.
+
+The cross-score pattern reproduces. Happy scenarios carry positive `proud` cross-scores (+3.4 on average); afraid scenarios carry positive `angry` cross-scores (+4.4); every negative-valence scenario scores strongly *against* `calm`. The valence/arousal geometry from section 17 is not a training-corpus artifact.
+
+**Test 3: do the probes respond to scalar intensity?**
+
+The sharpest of the three tests, and the most informative. Construct a template prompt with one numerical knob, sweep the knob, score at each level. A semantic probe should respond smoothly and monotonically on its target axis. Four axes: Tylenol dose (afraid ↑, calm ↓), lottery winnings (happy ↑), contractor theft (angry ↑, calm ↓), silent meditation retreat length (calm ↑).
+
+**Some probes pass cleanly.** On the theft axis, `angry` rises strictly monotonically from +3.32 at $500 to +5.07 at $500,000, and `calm` falls strictly monotonically from −0.99 to −3.27 in the opposite direction. On the Tylenol axis, `calm` drops strictly monotonically from −0.55 at 500 mg to −3.66 at 20,000 mg. These are the cleanest demonstrations in the project that an emotion probe can track not just the presence or absence of an emotion but its *intensity*.
+
+**Some probes plateau.** `afraid` rises cleanly from 500 to 5,000 mg of Tylenol (+3.33 → +4.39), then saturates: 10,000 and 20,000 mg both read about +4.37. This is not a failure but a readable feature — the probe treats "crossed into dangerous" as a threshold with no gradient beyond it. The same step-function appears on the theft axis past about $5,000.
+
+**And two probes fail outright.** `happy` is flat-to-slightly-decreasing across the lottery axis: $50 scores +3.13, $500,000 scores +2.74. A native speaker would say $500K is obviously more happy-inducing than $50; the probe disagrees. `calm` goes the *wrong direction* on retreat length — a 30-day silent retreat scores −2.11, *lower* than a 1-day retreat at −0.98 — while `proud` on the same axis rises from +3.08 to +4.15. A 30-day silent retreat is a major accomplishment, and the model reads it that way rather than as a scene of tranquility.
+
+Both failures are diagnosable, and tie back to test 1's caveat about `calm`. Our happy corpus was moderate-scale (a letter from grandma, a penalty-shootout win, a first bike, a grandmother's recipe working); the probe saturates past the event magnitude those passages covered. Our calm corpus was scene-heavy; a retreat described as a completed practice isn't what the probe was built to recognize.
+
+One unexpected cross-axis pattern is worth calling out. On the lottery axis, while `happy` stays flat, **`calm` crashes** (−2.24 → −5.60) and **`afraid` rises** (−2.20 → −0.69). Big lottery wins don't activate the positive-valence probes — they activate the *arousal* probes, in both directions. A $500K windfall is high-arousal-positive, and the high-arousal dimension lights up the same probes a threat would, while the valence dimension stays essentially unchanged. That's a specific, non-obvious finding about what this class of probe actually tracks: valence and arousal are not cleanly separated in the difference-of-means direction, and high-arousal positive events read more like high-arousal negative events than like mid-arousal positive ones.
+
+**What the three tests together teach.**
+
+The probes are concepts, but the concept each probe captures has a specific shape: it is the concept *as the training corpus's distribution of activations encoded it*. When that distribution happens to match the general emotion well, the probe generalizes. When the training corpus is narrower than the concept — scene-heavy calm, moderate-scale happy — the probe tracks the narrower thing. Difference of means is a purely descriptive operation; the resulting vector describes whatever you averaged over, and nothing else.
+
+This is obvious in retrospect but has specific, actionable product implications. For a probe workbench, the **intensity-modulation sweep is the single most informative diagnostic**. Pick a parametric template, vary the scalar, plot every probe's trajectory on one axis. In one glance you can read off which probes saturate, which track cleanly, which track an axis you didn't expect (lottery lighting up arousal rather than valence), and where your corpus has a blind spot. None of the existing mech-interp tooling I've looked at ships with this as a first-class view — it's the kind of thing that falls out of running the validation workflow end-to-end in a scripting environment but that no one turns into a polished component until it belongs to a product.
+
+The three tests also interlock to produce a specific corpus-curation roadmap. Calm needs abstract-state passages alongside scene-ambiance ones. Happy needs a wider intensity spread. Proud is already clean. Angry and afraid work well above threshold but would benefit from sub-threshold levels to test the onset of the step function. That's specific actionable feedback — and it is the kind of feedback loop the workbench product needs to support. The next section is the first experiment toward closing it.
