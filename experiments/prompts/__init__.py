@@ -19,6 +19,16 @@ from .disambiguation import (
     DISAMBIG_B1,
     DISAMBIG_B2,
 )
+from .emotion_stories import (
+    EMOTION_AFRAID,
+    EMOTION_ANGRY,
+    EMOTION_CALM,
+    EMOTION_HAPPY,
+    EMOTION_NEUTRAL_BASELINE,
+    EMOTION_PROUD,
+    EMOTION_SAD,
+    EMOTION_STORIES_TINY,
+)
 from .factual import FACTUAL_15
 from .homonym_capital import (
     HOMONYM_CAPITAL_ALL,
@@ -45,4 +55,12 @@ __all__ = [
     "HOMONYM_CAPITAL_UPPERCASE",
     "HOMONYM_CAPITAL_PUNISHMENT",
     "HOMONYM_CAPITAL_ALL",
+    "EMOTION_HAPPY",
+    "EMOTION_SAD",
+    "EMOTION_ANGRY",
+    "EMOTION_AFRAID",
+    "EMOTION_CALM",
+    "EMOTION_PROUD",
+    "EMOTION_NEUTRAL_BASELINE",
+    "EMOTION_STORIES_TINY",
 ]

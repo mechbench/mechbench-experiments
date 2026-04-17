@@ -64,13 +64,16 @@ from .geometry import (
     entropy_bits,
     fact_vectors,
     fact_vectors_at,
+    fact_vectors_pooled,
     intra_inter_separation,
     iterate_clusters,
     nearest_neighbor_purity,
+    orthogonalize_against,
     silhouette_cosine,
     top_k_mass,
     vocab_concentration,
 )
+from .probes import Probe
 from .hooks import HookFn, HookInfo, parse_hook_name
 from .interventions import Ablate, Capture, Intervention, Patch, compose
 from .lens import logit_lens_final, logit_lens_per_position
@@ -114,6 +117,7 @@ __all__ = [
     # Fact vectors + geometry
     "fact_vectors",
     "fact_vectors_at",
+    "fact_vectors_pooled",
     "centroid_decode",
     "cohesion",
     "cosine_matrix",
@@ -122,6 +126,9 @@ __all__ = [
     "cluster_purity",
     "silhouette_cosine",
     "nearest_neighbor_purity",
+    "orthogonalize_against",
+    # Probes (persistent concept vectors)
+    "Probe",
     # Vocabulary-space concentration
     "VocabConcentration",
     "vocab_concentration",

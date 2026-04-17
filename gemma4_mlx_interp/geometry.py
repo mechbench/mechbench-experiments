@@ -149,6 +149,62 @@ def fact_vectors_at(
     return out
 
 
+def fact_vectors_pooled(
+    model,
+    validated,
+    layers: Iterable[int],
+    *,
+    start: int = 0,
+    end: int | None = None,
+    interventions: Iterable = (),
+) -> dict[int, np.ndarray]:
+    """Residual-stream mean pooling over a range of token positions per prompt.
+
+    Produces one vector per prompt per layer, by averaging resid_post over
+    positions [start, end) for each prompt. Use when the concept you're
+    probing for is distributed across a passage rather than localized at a
+    single subject token — e.g. emotion content in a short story, register
+    in a paragraph, style in an essay. This is the extraction pattern used
+    by Anthropic's 'Emotion Concepts' work (transformer-circuits.pub, 2026),
+    which averages over positions >= 50 within each story.
+
+    Args:
+        model: Model instance.
+        validated: ValidatedPromptSet.
+        layers: Iterable of layer indices.
+        start: First token position to include. Negative is supported and
+            interpreted relative to sequence length. If a prompt is shorter
+            than `start`, we fall back to the final token position (so every
+            prompt still contributes one vector rather than crashing).
+        end: One past the last token position to include, or None for the
+            end of each prompt. Clipped to each prompt's length.
+        interventions: Optional extra interventions, same as fact_vectors_at.
+
+    Returns:
+        dict {layer: np.ndarray[n_prompts, D_MODEL]} in float32, where each
+        row is the mean of resid_post over the requested position range for
+        one prompt.
+    """
+    layers_list = list(layers)
+    n = len(validated)
+    out = {L: np.zeros((n, D_MODEL), dtype=np.float32) for L in layers_list}
+    cap = Capture.residual(layers_list, point="post")
+    extra = list(interventions)
+    for j, vp in enumerate(validated):
+        result = model.run(vp.input_ids, interventions=[cap, *extra])
+        seq_len = int(vp.input_ids.shape[1])
+        s = start if start >= 0 else max(0, seq_len + start)
+        e = seq_len if end is None else min(end, seq_len)
+        if s >= e:
+            s, e = seq_len - 1, seq_len
+        for L in layers_list:
+            resid = result.cache[f"blocks.{L}.resid_post"][0, s:e, :].astype(mx.float32)
+            pooled = resid.mean(axis=0)
+            mx.eval(pooled)
+            out[L][j] = np.array(pooled)
+    return out
+
+
 # ---------------------------------------------------------------------------
 # Decoding
 # ---------------------------------------------------------------------------
@@ -203,6 +259,65 @@ def centroid_decode(
         (model.tokenizer.decode([int(i)]), float(probs_np[int(i)]))
         for i in top_idx
     ]
+
+
+# ---------------------------------------------------------------------------
+# Vector transformations
+# ---------------------------------------------------------------------------
+
+
+def orthogonalize_against(
+    vectors: np.ndarray,
+    baseline: np.ndarray,
+    *,
+    explain: float = 0.5,
+) -> np.ndarray:
+    """Project out the top-variance directions of `baseline` from `vectors`.
+
+    Fits PCA on `baseline`, keeps enough principal components to explain
+    at least `explain` fraction of baseline's variance, and returns
+    `vectors` with those directions subtracted out.
+
+    Why: when building concept vectors (emotion probes, sentiment
+    directions, register vectors, etc.) the raw centroids are contaminated
+    by directions that are high-variance across ANY text, not specific to
+    the concept of interest — sentence-start signals, punctuation,
+    position-in-sequence artifacts. Computing PCs on an emotionally- or
+    semantically-neutral baseline corpus and subtracting those directions
+    yields a cleaner concept vector. This is the denoising step from
+    Anthropic's 'Emotion Concepts' paper (transformer-circuits.pub, 2026).
+
+    Mean-subtraction is the degenerate special case of this with a
+    one-component baseline (just the grand mean direction).
+
+    Args:
+        vectors: np.ndarray of shape [n, d]. The concept vectors to clean.
+        baseline: np.ndarray of shape [m, d]. The baseline corpus activations.
+            Should be on comparable scale/layer to `vectors`.
+        explain: float in (0, 1]. Keep PCs until cumulative explained
+            variance reaches this fraction. Default 0.5 matches the paper.
+
+    Returns:
+        np.ndarray of same shape as `vectors`, with the baseline's
+        top-variance subspace projected out.
+    """
+    if not 0.0 < explain <= 1.0:
+        raise ValueError(f"explain must be in (0, 1], got {explain}")
+    baseline = np.asarray(baseline, dtype=np.float64)
+    baseline_centered = baseline - baseline.mean(axis=0, keepdims=True)
+    # SVD of centered baseline: rows are observations, columns are features.
+    # Singular vectors Vt[k] are the principal axes in feature space.
+    _, S, Vt = np.linalg.svd(baseline_centered, full_matrices=False)
+    var = S ** 2
+    if var.sum() <= 0:
+        return vectors.astype(np.float32, copy=True)
+    cum = np.cumsum(var) / var.sum()
+    k = int(np.searchsorted(cum, explain) + 1)
+    k = min(k, Vt.shape[0])
+    P = Vt[:k]  # [k, d]
+    v = np.asarray(vectors, dtype=np.float64)
+    projection = v @ P.T @ P  # [n, d] — component of v in the baseline subspace
+    return (v - projection).astype(np.float32)
 
 
 # ---------------------------------------------------------------------------
