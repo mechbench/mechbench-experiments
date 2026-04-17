@@ -73,6 +73,7 @@ from .geometry import (
     top_k_mass,
     vocab_concentration,
 )
+from .generate import generate_labeled_corpus, generate_text
 from .probes import Probe
 from .hooks import HookFn, HookInfo, parse_hook_name
 from .interventions import Ablate, Capture, Intervention, Patch, compose
@@ -129,6 +130,9 @@ __all__ = [
     "orthogonalize_against",
     # Probes (persistent concept vectors)
     "Probe",
+    # Generation (for corpus-building workflows)
+    "generate_text",
+    "generate_labeled_corpus",
     # Vocabulary-space concentration
     "VocabConcentration",
     "vocab_concentration",

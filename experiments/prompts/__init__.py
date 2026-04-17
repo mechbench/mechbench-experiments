@@ -29,6 +29,7 @@ from .emotion_stories import (
     EMOTION_SAD,
     EMOTION_STORIES_TINY,
 )
+from .emotion_stories_generated import EMOTION_STORIES_GENERATED
 from .factual import FACTUAL_15
 from .homonym_capital import (
     HOMONYM_CAPITAL_ALL,
@@ -63,4 +64,5 @@ __all__ = [
     "EMOTION_PROUD",
     "EMOTION_NEUTRAL_BASELINE",
     "EMOTION_STORIES_TINY",
+    "EMOTION_STORIES_GENERATED",
 ]
