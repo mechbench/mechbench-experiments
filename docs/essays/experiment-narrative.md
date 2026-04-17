@@ -424,3 +424,51 @@ The probes are concepts, but the concept each probe captures has a specific shap
 This is obvious in retrospect but has specific, actionable product implications. For a probe workbench, the **intensity-modulation sweep is the single most informative diagnostic**. Pick a parametric template, vary the scalar, plot every probe's trajectory on one axis. In one glance you can read off which probes saturate, which track cleanly, which track an axis you didn't expect (lottery lighting up arousal rather than valence), and where your corpus has a blind spot. None of the existing mech-interp tooling I've looked at ships with this as a first-class view — it's the kind of thing that falls out of running the validation workflow end-to-end in a scripting environment but that no one turns into a polished component until it belongs to a product.
 
 The three tests also interlock to produce a specific corpus-curation roadmap. Calm needs abstract-state passages alongside scene-ambiance ones. Happy needs a wider intensity spread. Proud is already clean. Angry and afraid work well above threshold but would benefit from sub-threshold levels to test the onset of the step function. That's specific actionable feedback — and it is the kind of feedback loop the workbench product needs to support. The next section is the first experiment toward closing it.
+
+---
+
+## 19. Concept Purity Has a Cost
+
+The remediation plan section 18 ended on looked straightforward. Calm was scene-heavy; give it state-focused passages. Happy saturated at moderate-scale events; give it a wider intensity spread. Build a second corpus with those gaps deliberately filled, rebuild the probes, rerun the intensity-modulation test, watch the failures turn into successes.
+
+It did not entirely survive contact with the data.
+
+I wrote a second corpus — 72 short passages across the same six emotions, each emotion's six topics deliberately varied to target the specific shortcomings step_24 had diagnosed. Calm passages now ranged from rain on a windowpane through the inner stillness of a veteran running a crisis to the practiced breathing of someone in a layoff meeting. Happy passages now spanned from a wallet returned by a stranger through a long-awaited reunion to the moment a parent hears their child's first full sentence. I rebuilt the probes, scored the originals and the new ones head-to-head on all four intensity axes, and also ran a cross-corpus generalization test I hadn't originally planned: score each probe set on the *other* corpus's passages.
+
+The first finding is mildly positive. On within-corpus self-consistency, the new probe set hits 97.2% per-passage accuracy versus the original's 90.6%. Fine — but that's mostly a prose-quality artifact (Claude's passages were more uniform within each emotion cohort than my hand-curated ones had been), not a deeper improvement in concept capture.
+
+The *cross-corpus* result is more interesting. Each probe set classifies the other corpus's passages at 62-65% accuracy — well above the 17% chance baseline. The new probe set even hits a full 6/6 aggregated diagonal on the *original* hand-curated corpus, slightly beating the original probes' 6/6 on their own native data. This is the strongest evidence the whole emotion-probe arc has produced that these vectors carry real concept content rather than training-template fingerprints. A clean cross-corpus test had never been in the plan; it fell out for free, and it ruled out the biggest confound.
+
+But then the intensity test — the test I had specifically designed the diverse corpus to fix — mostly went *the wrong way*.
+
+The calm-on-retreat failure, which the diversity was targeted at, *improved* modestly: the wrong-direction delta went from −1.14 to −0.40, a halving. The diverse corpus partially fixes calm's scene-vs-state problem, but calm still points the wrong direction on retreat length. The happy-on-lottery flatline got *worse*: the original probe was nearly flat (−0.39 across four orders of magnitude of lottery winnings), and the new probe goes further in the wrong direction (−1.44). The clean wins from step_24 — angry-on-theft, calm-on-Tylenol — shrank. Angry's delta on theft dropped from +1.75 to +1.18. Calm's delta on Tylenol dropped from −3.11 to −2.02 and lost its strict monotonicity.
+
+Diversity made the probes more concept-pure and *less intensity-responsive*.
+
+The explanation takes a minute to see but once it clicks, the pattern is consistent. Look at the intensity-test prompts:
+
+> *"I just took 5,000 mg of Tylenol for my back pain. Should I be concerned?"*
+> *"My contractor disappeared after taking $50,000 from me. What are my legal options?"*
+> *"I just finished a 14-day silent meditation retreat. What should I do with the feeling?"*
+
+These are short first-person user-voice requests for advice. Concrete events, plain language, a numerical quantity wrapped in a helpseeking frame. Compare to the original hand-curated training passages:
+
+> *"Her boss had texted her on Christmas Eve expecting a response by end of day. Stefania read it, set the phone on the table, and watched her children opening their presents with a heat in her chest she was determined not to show them."*
+
+Third-person, specific person in a specific situation, plain sentences, concrete events, an occasional minor literary flourish. Now look at the Claude-authored diversification:
+
+> *"Inside the steadiness of her own focus there was room for everyone else to do their jobs."*
+
+More literary. Longer sentences, more abstract nouns, interior monologue, a slightly elevated register. It illustrates the target emotion perfectly — that's why the cross-corpus generalization works — but it doesn't share the same *surface form* with a concrete user-voice advice prompt.
+
+**What the original probes were apparently doing, in part, was surface-matching.** The `angry` probe's strong response to the $500K contractor-theft prompt was partly a response to the concept of anger and partly a response to the *surface form* of a plain-language concrete-grievance passage, which its training corpus contained a lot of. Move the training corpus toward more literary prose and the surface-match component fades. What's left is concept-match alone — which is real but weaker, because concept-match alone is a subtler signal than concept-match-plus-surface-resonance.
+
+This isn't a failure of the probe technique. It's a clarification of what the technique measures. Difference-of-means builds a vector that describes whatever you averaged. The vector captures the concept, yes, but it also captures register, prose style, sentence-length distribution, concrete-vs-abstract balance, and every other statistical regularity that distinguishes the positive corpus from the neutral baseline. Test the resulting probe on text that *matches* the training corpus's surface profile and you get concept-plus-surface resonance. Test on text that doesn't match and you get concept alone.
+
+There's a tradeoff in there, cleanly stated. A **concept-pure probe** (built from diverse, register-varied text) generalizes better across surface forms and gives you a more honest answer to "does this passage contain emotion X." A **domain-matched probe** (built from text that shares surface form with the intended test prompts) responds more sharply on quantitative tests within the matched domain but leaks surface features into the concept direction, where they show up as brittleness on out-of-domain prompts. Neither kind is "the right probe" in the abstract. Both are useful for different questions. The choice between them is a decision that should be made explicitly, not accidentally.
+
+That last sentence is the one with the cleanest product implication. For a mech-interp workbench to be genuinely useful, it needs to surface this choice. For a given probe applied to a given test prompt, a user should be able to see *how much of the response is surface match and how much is concept match*, and build multiple probes per concept if the two components need to be used separately. This is not a feature that exists in the current mech-interp tooling I've looked at — in a scripting environment, you never have to name the tradeoff to get your experiment done. You pick a corpus, build a probe, get a number, move on. The surface-match component is invisible, and because it's invisible, it leaks into whatever downstream conclusion you draw.
+
+After five experiments, the primitives we have — `Probe`, `fact_vectors_pooled`, `orthogonalize_against`, `generate_text` — are at the right level of abstraction. They compose cleanly, they read each other's outputs, they scale from hand-curated 100-passage corpora to generated ones without touching the framework. What's missing is a second generation of measurement techniques that decompose a single probe-score into its surface and concept parts, that compare probes against each other to recover affective-geometry structure automatically, that surface depth-trajectory profiles and intensity-saturation shapes as first-class readouts. Most of those are still to be built.
+
+The scale-up experiment didn't close the feedback loop. It told me, more precisely than I could have gotten any other way, exactly what the next generation of primitives needs to do.
