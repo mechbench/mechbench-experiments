@@ -111,6 +111,7 @@ def fact_vectors_at(
     layers: Iterable[int],
     *,
     position: str = "subject",
+    interventions: Iterable = (),
 ) -> dict[int, np.ndarray]:
     """Multi-layer fact-vector extraction in one model pass per prompt.
 
@@ -123,6 +124,12 @@ def fact_vectors_at(
         validated: ValidatedPromptSet.
         layers: Iterable of layer indices.
         position: 'subject' or 'final'.
+        interventions: Optional extra interventions (e.g. an Ablate.layer or
+            Ablate.side_channel) to run in the same forward pass as the
+            residual capture. Useful for "what do the residuals look like
+            with this layer disabled?" experiments. The capture happens AFTER
+            any user intervention at the same hook point, so the recorded
+            residuals reflect the post-intervention state.
 
     Returns:
         dict {layer: np.ndarray[n_prompts, D_MODEL]} in float32.
@@ -131,8 +138,9 @@ def fact_vectors_at(
     n = len(validated)
     out = {L: np.zeros((n, D_MODEL), dtype=np.float32) for L in layers_list}
     cap = Capture.residual(layers_list, point="post")
+    extra = list(interventions)
     for j, vp in enumerate(validated):
-        result = model.run(vp.input_ids, interventions=[cap])
+        result = model.run(vp.input_ids, interventions=[cap, *extra])
         pos = _resolve_position(model, vp, position)
         for L in layers_list:
             v = result.cache[f"blocks.{L}.resid_post"][0, pos, :].astype(mx.float32)
