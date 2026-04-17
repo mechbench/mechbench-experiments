@@ -110,6 +110,22 @@ def _attention_with_internals(
     queries = queries.transpose(0, 2, 1, 3)
     queries = attn.rope(queries, offset=offset)
 
+    # Expose Q, K, V as hook points BEFORE the GQA-repeat. Users who want
+    # post-repeat copies can mx.repeat themselves; the natural per-KV-head
+    # shape is more interpretable as the trained storage.
+    queries = _dispatch(
+        f"blocks.{layer_idx}.attn.q", layer_idx, "attn.q", queries,
+        hooks, capture_set, cache,
+    )
+    keys = _dispatch(
+        f"blocks.{layer_idx}.attn.k", layer_idx, "attn.k", keys,
+        hooks, capture_set, cache,
+    )
+    values = _dispatch(
+        f"blocks.{layer_idx}.attn.v", layer_idx, "attn.v", values,
+        hooks, capture_set, cache,
+    )
+
     # Grouped-query attention: repeat KV heads to match query heads.
     if attn.n_heads != attn.n_kv_heads:
         repeats = attn.n_heads // attn.n_kv_heads
@@ -118,11 +134,38 @@ def _attention_with_internals(
 
     scores = (queries @ keys.transpose(0, 1, 3, 2)) * attn.scale
 
-    if mask is not None and isinstance(mask, mx.array):
-        m = mask
-        if m.shape[-1] != scores.shape[-1]:
-            m = m[..., -scores.shape[-1] :]
-        scores = scores + m
+    # Apply attention mask. create_attention_mask can return None, a string
+    # ('causal'), or an mx.array. The fused scaled_dot_product_attention
+    # handles the string internally; we have to materialize it explicitly
+    # here. The previous implementation only handled mx.array masks and
+    # silently produced NO-MASK (bidirectional) attention whenever the
+    # framework returned 'causal' — a latent bug in step_05/06/07 that
+    # happened not to bite those experiments because they only looked at
+    # attention FROM the final token position (which attends to everything
+    # under causal anyway).
+    if mask is not None:
+        Q_len = scores.shape[-2]
+        K_len = scores.shape[-1]
+        if isinstance(mask, mx.array):
+            m = mask
+            if m.shape[-1] != K_len:
+                m = m[..., -K_len:]
+            scores = scores + m
+        elif mask == "causal":
+            # Build [Q_len, K_len] causal mask. K_len may exceed Q_len when
+            # the KV cache holds a prefix (K_len == offset + Q_len). Allow
+            # query i to attend to key j whenever j <= (K_len - Q_len) + i.
+            i = mx.arange(Q_len).reshape(Q_len, 1)
+            j = mx.arange(K_len).reshape(1, K_len)
+            allowed = j <= (K_len - Q_len + i)
+            m = mx.where(allowed, mx.array(0.0, dtype=scores.dtype),
+                          mx.array(-1e9, dtype=scores.dtype))
+            scores = scores + m
+        else:
+            raise NotImplementedError(
+                f"Unknown mask type in manual attention path: {mask!r}. "
+                f"Expected None, 'causal', or an mx.array."
+            )
 
     weights = mx.softmax(scores, axis=-1)
     weights = _dispatch(

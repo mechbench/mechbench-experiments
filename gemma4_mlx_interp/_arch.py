@@ -37,6 +37,9 @@ LAYER_HOOK_POINTS: tuple[str, ...] = (
     "resid_post",         # layer output after layer_scalar
     "attn.weights",       # post-softmax attention weights [B, n_heads, L, S_kv]
     "attn.per_head_out",  # weights @ values, before o_proj concat [B, n_heads, L, head_dim]
+    "attn.q",             # per-head queries post-q_norm + post-RoPE [B, n_heads, L, head_dim]
+    "attn.k",             # per-KV-head keys post-k_norm + post-RoPE [B, n_kv_heads, L_kv, head_dim]
+    "attn.v",             # per-KV-head values post-v_norm [B, n_kv_heads, L_kv, head_dim]
 )
 
 # Top-level (non-layer) hook points. Empty in v0; reserved for future
@@ -47,7 +50,9 @@ GLOBAL_HOOK_POINTS: tuple[str, ...] = ()
 # capture targets one of these, the canonical forward switches from the fused
 # scaled_dot_product_attention kernel to a manual softmax path that exposes
 # the attention internals.
-ATTN_INTERNAL_POINTS: frozenset[str] = frozenset({"attn.weights", "attn.per_head_out"})
+ATTN_INTERNAL_POINTS: frozenset[str] = frozenset({
+    "attn.weights", "attn.per_head_out", "attn.q", "attn.k", "attn.v",
+})
 
 
 def all_hook_names() -> list[str]:
@@ -55,7 +60,7 @@ def all_hook_names() -> list[str]:
 
     Useful for discovery, error-message suggestions, and tab-completion in
     notebook environments. Length: N_LAYERS * len(LAYER_HOOK_POINTS) +
-    len(GLOBAL_HOOK_POINTS) = 42 * 7 + 0 = 294.
+    len(GLOBAL_HOOK_POINTS) = 42 * 10 + 0 = 420.
     """
     out = list(GLOBAL_HOOK_POINTS)
     for i in range(N_LAYERS):

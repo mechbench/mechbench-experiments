@@ -370,6 +370,54 @@ class Capture:
             )
         )
 
+    @staticmethod
+    def queries(layers: int | Iterable[int]) -> Intervention:
+        """Capture per-head query tensors (post-q_norm + post-RoPE).
+
+        Shape [B, n_heads, L, head_dim]. Forces the manual attention path.
+        """
+        return _Captures(
+            names=tuple(f"blocks.{i}.attn.q" for i in _norm_layers(layers))
+        )
+
+    @staticmethod
+    def keys(layers: int | Iterable[int]) -> Intervention:
+        """Capture per-KV-head key tensors (post-k_norm + post-RoPE, pre-GQA-repeat).
+
+        Shape [B, n_kv_heads, L_kv, head_dim]. Forces the manual attention path.
+        n_kv_heads=2 for Gemma 4 E4B; each KV-head serves 4 Q-heads under the
+        4:1 GQA ratio. In KV-shared layers (24-41) the keys come from the
+        earlier layer's cache.
+        """
+        return _Captures(
+            names=tuple(f"blocks.{i}.attn.k" for i in _norm_layers(layers))
+        )
+
+    @staticmethod
+    def values(layers: int | Iterable[int]) -> Intervention:
+        """Capture per-KV-head value tensors (post-v_norm, pre-GQA-repeat).
+
+        Shape [B, n_kv_heads, L_kv, head_dim]. Forces the manual attention path.
+        V does NOT get RoPE (only Q and K do).
+        """
+        return _Captures(
+            names=tuple(f"blocks.{i}.attn.v" for i in _norm_layers(layers))
+        )
+
+    @staticmethod
+    def qkv(layers: int | Iterable[int]) -> Intervention:
+        """Capture Q, K, AND V per head for the given layers, in one intervention.
+
+        Equivalent to composing Capture.queries + Capture.keys + Capture.values
+        but shorter to write. Forces the manual attention path.
+        """
+        names: list[str] = []
+        for i in _norm_layers(layers):
+            names.append(f"blocks.{i}.attn.q")
+            names.append(f"blocks.{i}.attn.k")
+            names.append(f"blocks.{i}.attn.v")
+        return _Captures(names=tuple(names))
+
 
 class Patch:
     """Patch interventions. Each .X(...) returns an Intervention that
