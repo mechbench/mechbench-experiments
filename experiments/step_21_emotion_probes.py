@@ -36,6 +36,7 @@ if str(ROOT) not in sys.path:
 
 from gemma4_mlx_interp import (  # noqa: E402
     Model, Probe, fact_vectors_pooled,
+    grouped_row_heatmap, probe_diagonal_heatmap,
 )
 from experiments.prompts import (  # noqa: E402
     EMOTION_NEUTRAL_BASELINE, EMOTION_STORIES_TINY,
@@ -144,50 +145,30 @@ def main():
 
     # ---- Visualizations: agg heatmap + per-passage heatmap ----
     fig, axes = plt.subplots(1, 2, figsize=(14, 6))
+    short_probe_labels = [p.replace("emotion_", "") for p in probe_names]
+    short_emotion_labels = [e.replace("emotion_", "") for e in emotion_names]
 
-    # Panel 1: aggregated (emotion x probe)
-    ax = axes[0]
-    im = ax.imshow(agg, aspect="auto", cmap="RdBu_r",
-                   vmin=-np.abs(agg).max(), vmax=np.abs(agg).max())
-    ax.set_xticks(range(len(probe_names)))
-    ax.set_xticklabels([p.replace("emotion_", "") for p in probe_names],
-                       rotation=30, ha="right")
-    ax.set_yticks(range(len(emotion_names)))
-    ax.set_yticklabels([e.replace("emotion_", "") for e in emotion_names])
-    ax.set_xlabel("probe")
-    ax.set_ylabel("true emotion")
-    ax.set_title(f"Aggregated probe scores at L{LAYER}\n"
-                 f"(mean over each emotion's passages)")
-    for i in range(agg.shape[0]):
-        for j in range(agg.shape[1]):
-            ax.text(j, i, f"{agg[i, j]:+.2f}", ha="center", va="center",
-                    color="white" if abs(agg[i, j]) > agg.max() * 0.5 else "black",
-                    fontsize=8)
-    plt.colorbar(im, ax=ax, shrink=0.8)
+    probe_diagonal_heatmap(
+        agg,
+        row_labels=short_emotion_labels,
+        col_labels=short_probe_labels,
+        ax=axes[0],
+        title=(f"Aggregated probe scores at L{LAYER}\n"
+               f"(mean over each emotion's passages)"),
+    )
+    axes[0].set_xlabel("probe")
+    axes[0].set_ylabel("true emotion")
 
-    # Panel 2: per-passage scores
-    ax = axes[1]
-    # Order by true emotion so blocks of the same emotion are visually grouped
-    order = np.argsort([emotion_names.index(l) for l in labels])
-    scores_sorted = scores[order]
-    labels_sorted = labels[order]
-    im = ax.imshow(scores_sorted, aspect="auto", cmap="RdBu_r",
-                   vmin=-np.abs(scores).max(), vmax=np.abs(scores).max())
-    ax.set_xticks(range(len(probe_names)))
-    ax.set_xticklabels([p.replace("emotion_", "") for p in probe_names],
-                       rotation=30, ha="right")
-    # Mark emotion-block boundaries on the y-axis
-    ax.set_yticks([])
-    ax.set_xlabel("probe")
-    ax.set_ylabel("passage (grouped by true emotion)")
-    ax.set_title(f"Per-passage probe scores at L{LAYER}")
-    # Draw horizontal lines at emotion boundaries
-    cur = labels_sorted[0]
-    for y in range(len(labels_sorted)):
-        if labels_sorted[y] != cur:
-            ax.axhline(y - 0.5, color="black", linewidth=0.8)
-            cur = labels_sorted[y]
-    plt.colorbar(im, ax=ax, shrink=0.8)
+    grouped_row_heatmap(
+        scores,
+        row_groups=labels,
+        group_order=emotion_names,
+        col_labels=short_probe_labels,
+        ax=axes[1],
+        xlabel="probe",
+        ylabel="passage (grouped by true emotion)",
+        title=f"Per-passage probe scores at L{LAYER}",
+    )
 
     fig.suptitle(
         "Emotion-probe self-consistency — does each passage score highest "

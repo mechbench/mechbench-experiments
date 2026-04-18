@@ -1,6 +1,6 @@
 """Matplotlib plot helpers with project conventions baked in.
 
-Eight helpers covering the recurring chart styles in this project's
+Ten helpers covering the recurring chart styles in this project's
 experiments:
 
   bar_by_layer            per-layer bar chart with red=global / blue=local
@@ -16,6 +16,10 @@ experiments:
                           global-layer markers (step_26/28/29)
   probe_diagonal_heatmap  true x predicted aggregated scoring grid with
                           per-cell text annotations (step_21/23)
+  grouped_row_heatmap     per-row heatmap with rows grouped by category +
+                          horizontal boundary lines (step_21/23)
+  intensity_curve         multi-line plot against a scalar parameter with
+                          target/antipode emphasis (step_24/25)
   leaderboard_bar         ranked horizontal bar chart with text labels and
                           global/local color coding (step_26)
 
@@ -596,6 +600,166 @@ def probe_diagonal_heatmap(
     if colorbar:
         plt.colorbar(im, ax=ax, shrink=0.8, label=colorbar_label)
 
+    return ax
+
+
+# ---------------------------------------------------------------------------
+# grouped_row_heatmap
+# ---------------------------------------------------------------------------
+
+
+def grouped_row_heatmap(
+    values: np.ndarray,
+    row_groups: np.ndarray,
+    *,
+    col_labels: Optional[list[str]] = None,
+    group_order: Optional[list[str]] = None,
+    ax: Optional[Axes] = None,
+    cmap: str = "RdBu_r",
+    vmin: Optional[float] = None,
+    vmax: Optional[float] = None,
+    boundary_color: str = "black",
+    boundary_width: float = 0.8,
+    xlabel: Optional[str] = None,
+    ylabel: Optional[str] = None,
+    title: Optional[str] = None,
+    colorbar: bool = True,
+    colorbar_label: str = "",
+    figsize: tuple[float, float] = (8, 10),
+) -> Axes:
+    """Per-row heatmap with rows visually grouped by category + boundary lines.
+
+    Rows get re-ordered so members of the same group sit contiguously, and
+    thin horizontal lines are drawn between groups. The y-axis is unlabeled
+    (too many rows) but the grouping structure is visually obvious.
+
+    Args:
+        values: [n_rows, n_cols] score matrix.
+        row_groups: [n_rows] sequence of group labels (strings).
+        col_labels: optional column-axis labels.
+        group_order: optional canonical ordering of groups. If None, groups
+            are ordered by first appearance in row_groups.
+
+    Used by step_21 and step_23 for per-passage probe-score heatmaps
+    where passages are visually grouped by their true emotion.
+    """
+    ax = _ensure_axes(ax, figsize=figsize)
+    arr = np.asarray(values)
+    groups = np.asarray(row_groups)
+
+    if group_order is None:
+        group_order = list(dict.fromkeys(groups.tolist()))
+
+    # Sort rows by group order
+    order = np.argsort([group_order.index(g) for g in groups])
+    arr_ord = arr[order]
+    groups_ord = groups[order]
+
+    vmax_abs = float(np.abs(arr).max()) if arr.size > 0 else 1.0
+    if vmin is None:
+        vmin = -vmax_abs
+    if vmax is None:
+        vmax = vmax_abs
+
+    im = ax.imshow(arr_ord, aspect="auto", cmap=cmap,
+                   vmin=vmin, vmax=vmax, interpolation="nearest")
+
+    if col_labels is not None:
+        ax.set_xticks(range(len(col_labels)))
+        ax.set_xticklabels(col_labels, rotation=30, ha="right")
+    ax.set_yticks([])
+
+    # Boundaries between groups
+    cur = groups_ord[0] if len(groups_ord) else None
+    for y in range(1, len(groups_ord)):
+        if groups_ord[y] != cur:
+            ax.axhline(y - 0.5, color=boundary_color, linewidth=boundary_width)
+            cur = groups_ord[y]
+
+    if xlabel:
+        ax.set_xlabel(xlabel)
+    if ylabel:
+        ax.set_ylabel(ylabel)
+    if title:
+        ax.set_title(title, fontsize=11)
+    if colorbar:
+        plt.colorbar(im, ax=ax, shrink=0.8, label=colorbar_label)
+
+    return ax
+
+
+# ---------------------------------------------------------------------------
+# intensity_curve
+# ---------------------------------------------------------------------------
+
+
+def intensity_curve(
+    levels,
+    scores: np.ndarray,
+    series_names: list[str],
+    *,
+    ax: Optional[Axes] = None,
+    target_up: Optional[str] = None,
+    target_down: Optional[str] = None,
+    colors: Optional[dict[str, str]] = None,
+    log_x: bool = True,
+    xlabel: Optional[str] = None,
+    ylabel: str = "probe score",
+    title: Optional[str] = None,
+    marker: str = "o",
+    bold_linewidth: float = 3.0,
+    thin_linewidth: float = 1.3,
+    bold_alpha: float = 1.0,
+    thin_alpha: float = 0.55,
+    figsize: tuple[float, float] = (7, 5),
+) -> Axes:
+    """Multi-series line plot against a scalar parameter, with optional
+    target/antipode emphasis.
+
+    Args:
+        levels: iterable of x-axis scalar values (e.g. Tylenol dose in mg).
+        scores: [n_levels, n_series] array of per-series y values.
+        series_names: list of n_series labels (used for legend + to match
+            target_up / target_down).
+        target_up: name of the series expected to rise with x; drawn bold.
+        target_down: name of the series expected to fall with x; also bold.
+        colors: {series_name: color}. Falls back to matplotlib's default
+            cycle when absent.
+        log_x: x-axis log scale (default True; most intensity axes are log).
+
+    Used by step_24 (four intensity axes) and step_25 (side-by-side
+    intensity comparison between probe-sets).
+    """
+    ax = _ensure_axes(ax, figsize=figsize)
+    arr = np.asarray(scores)
+    cycle = plt.rcParams["axes.prop_cycle"].by_key()["color"]
+
+    for j, name in enumerate(series_names):
+        is_up = name == target_up
+        is_dn = name == target_down
+        is_emph = is_up or is_dn
+        lw = bold_linewidth if is_emph else thin_linewidth
+        alpha = bold_alpha if is_emph else thin_alpha
+        label = name
+        if is_up:
+            label = f"{name} (target up)"
+        elif is_dn:
+            label = f"{name} (antipode down)"
+        c = (colors or {}).get(name, cycle[j % len(cycle)])
+        ax.plot(levels, arr[:, j],
+                marker=marker, linewidth=lw, alpha=alpha,
+                color=c, label=label)
+
+    if log_x:
+        ax.set_xscale("log")
+    if xlabel:
+        ax.set_xlabel(xlabel)
+    ax.set_ylabel(ylabel)
+    if title:
+        ax.set_title(title, fontsize=10)
+    ax.axhline(0, color="black", linewidth=0.5, alpha=0.3)
+    ax.grid(True, alpha=0.3)
+    ax.legend(loc="best", fontsize=8, ncol=2)
     return ax
 
 

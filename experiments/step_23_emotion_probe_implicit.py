@@ -26,7 +26,9 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from gemma4_mlx_interp import Model, Probe, Prompt, PromptSet  # noqa: E402
-from gemma4_mlx_interp import fact_vectors_pooled  # noqa: E402
+from gemma4_mlx_interp import (  # noqa: E402
+    fact_vectors_pooled, grouped_row_heatmap, probe_diagonal_heatmap,
+)
 from experiments.prompts import (  # noqa: E402
     EMOTION_NEUTRAL_BASELINE, EMOTION_STORIES_TINY,
 )
@@ -207,66 +209,31 @@ def main():
 
     # ---- Visualization ----
     fig, axes = plt.subplots(1, 2, figsize=(14, 6))
+    short_probe_labels = [p.replace("emotion_", "") for p in probe_names]
+    short_emotion_labels = [e.replace("emotion_", "") for e in emotion_order]
 
-    # Panel 1: per-scenario heatmap (rows grouped by true emotion)
-    ax = axes[0]
-    order = np.argsort([emotion_order.index(l) for l in labels])
-    scores_sorted = scores[order]
-    labels_sorted = labels[order]
-    im = ax.imshow(
-        scores_sorted, aspect="auto", cmap="RdBu_r",
-        vmin=-np.abs(scores).max(), vmax=np.abs(scores).max(),
+    grouped_row_heatmap(
+        scores,
+        row_groups=labels,
+        group_order=emotion_order,
+        col_labels=short_probe_labels,
+        ax=axes[0],
+        xlabel="probe",
+        ylabel="scenario (grouped by true emotion)",
+        title=(f"Per-scenario probe scores at L{LAYER}\n"
+               f"{correct}/{n} correct = {100 * correct / n:.0f}%"),
     )
-    ax.set_xticks(range(len(probe_names)))
-    ax.set_xticklabels([p.replace("emotion_", "") for p in probe_names],
-                       rotation=30, ha="right")
-    ax.set_yticks(range(len(labels_sorted)))
-    ax.set_yticklabels(
-        [f"{labels_sorted[k].replace('emotion_', ''):>6s}  #{k+1}"
-         for k in range(len(labels_sorted))],
-        fontsize=9,
-    )
-    # Boundary lines between emotion groups
-    cur = labels_sorted[0]
-    for y in range(len(labels_sorted)):
-        if labels_sorted[y] != cur:
-            ax.axhline(y - 0.5, color="black", linewidth=0.8)
-            cur = labels_sorted[y]
-    ax.set_xlabel("probe")
-    ax.set_ylabel("scenario (grouped by true emotion)")
-    ax.set_title(f"Per-scenario probe scores at L{LAYER}\n"
-                 f"{correct}/{n} correct = {100 * correct / n:.0f}%")
-    # Text annotations
-    for i in range(scores_sorted.shape[0]):
-        for j in range(scores_sorted.shape[1]):
-            v = scores_sorted[i, j]
-            color = "white" if abs(v) > np.abs(scores).max() * 0.5 else "black"
-            ax.text(j, i, f"{v:+.2f}", ha="center", va="center",
-                    color=color, fontsize=8)
-    plt.colorbar(im, ax=ax, shrink=0.8)
 
-    # Panel 2: aggregated heatmap
-    ax = axes[1]
-    im = ax.imshow(
-        agg, aspect="auto", cmap="RdBu_r",
-        vmin=-np.abs(agg).max(), vmax=np.abs(agg).max(),
+    probe_diagonal_heatmap(
+        agg,
+        row_labels=short_emotion_labels,
+        col_labels=short_probe_labels,
+        ax=axes[1],
+        title=(f"Aggregated scenario scores at L{LAYER}\n"
+               f"diag {diag_hits}/{len(emotion_order)}"),
     )
-    ax.set_xticks(range(len(probe_names)))
-    ax.set_xticklabels([p.replace("emotion_", "") for p in probe_names],
-                       rotation=30, ha="right")
-    ax.set_yticks(range(len(emotion_order)))
-    ax.set_yticklabels([e.replace("emotion_", "") for e in emotion_order])
-    ax.set_xlabel("probe")
-    ax.set_ylabel("true emotion")
-    ax.set_title(f"Aggregated scenario scores at L{LAYER}\n"
-                 f"diag {diag_hits}/{len(emotion_order)}")
-    for i in range(agg.shape[0]):
-        for j in range(agg.shape[1]):
-            v = agg[i, j]
-            color = "white" if abs(v) > np.abs(agg).max() * 0.5 else "black"
-            ax.text(j, i, f"{v:+.2f}", ha="center", va="center",
-                    color=color, fontsize=9)
-    plt.colorbar(im, ax=ax, shrink=0.8)
+    axes[1].set_xlabel("probe")
+    axes[1].set_ylabel("true emotion")
 
     fig.suptitle(
         "Implicit-emotion scenario validation: do probes discriminate "

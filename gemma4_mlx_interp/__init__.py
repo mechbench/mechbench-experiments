@@ -95,7 +95,9 @@ from .lens import logit_lens_final, logit_lens_per_position
 from .model import Model, RunResult
 from .plot import (
     bar_by_layer,
+    grouped_row_heatmap,
     head_heatmap,
+    intensity_curve,
     leaderboard_bar,
     lens_trajectory,
     logprob_trajectory,
@@ -178,6 +180,8 @@ __all__ = [
     "similarity_heatmap",
     "head_heatmap",
     "probe_diagonal_heatmap",
+    "grouped_row_heatmap",
+    "intensity_curve",
     "leaderboard_bar",
     # Hook types (for users writing raw callbacks)
     "HookInfo",

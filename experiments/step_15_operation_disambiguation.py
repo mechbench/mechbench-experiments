@@ -31,7 +31,7 @@ if str(ROOT) not in sys.path:
 from gemma4_mlx_interp import (  # noqa: E402
     Model, cluster_purity, cosine_matrix, fact_vectors_at,
     intra_inter_separation, iterate_clusters,
-    nearest_neighbor_purity, silhouette_cosine,
+    nearest_neighbor_purity, pca_scatter, silhouette_cosine,
 )
 from experiments.prompts import DISAMBIG_ALL  # noqa: E402
 
@@ -118,43 +118,25 @@ def main():
     print(f"\n  4-cell NN same-cell hit rate: {nn_cell:.3f}  (chance = 0.226)")
 
     # ---- PCA: 2-panel scatter colored by both labelings ----
-    pca = PCA(n_components=2, random_state=42).fit(vecs)
-    proj = pca.transform(vecs)
-    var = pca.explained_variance_ratio_.sum()
     fig, axes = plt.subplots(1, 2, figsize=(15, 7))
-
-    # Panel 1: colored by operation-type
-    ax = axes[0]
-    op_colors = {"lookup": "#1f77b4", "counting": "#d62728"}
-    for op, _, mask in iterate_clusters(proj, op_labels):
-        ax.scatter(proj[mask, 0], proj[mask, 1],
-                   c=op_colors[op], label=f"{op} (n={int(mask.sum())})",
-                   s=80, alpha=0.85, edgecolors="black", linewidths=0.5)
-    ax.set_title(f"Colored by OPERATION-TYPE\n"
-                 f"separation = {op_stats['sep']:+.4f}, "
-                 f"sil = {op_stats['sil']:+.4f}")
-    ax.set_xlabel("PC1")
-    ax.set_ylabel("PC2")
-    ax.legend(loc="best", fontsize=10)
-    ax.grid(True, alpha=0.3)
-
-    # Panel 2: colored by word-presence
-    ax = axes[1]
-    word_colors = {"capital_present": "#2ca02c", "capital_absent": "#9467bd"}
-    for wp, _, mask in iterate_clusters(proj, word_labels):
-        ax.scatter(proj[mask, 0], proj[mask, 1],
-                   c=word_colors[wp], label=f"{wp} (n={int(mask.sum())})",
-                   s=80, alpha=0.85, edgecolors="black", linewidths=0.5)
-    ax.set_title(f"Colored by 'capital'-WORD-PRESENCE\n"
-                 f"separation = {word_stats['sep']:+.4f}, "
-                 f"sil = {word_stats['sil']:+.4f}")
-    ax.set_xlabel("PC1")
-    ax.set_ylabel("PC2")
-    ax.legend(loc="best", fontsize=10)
-    ax.grid(True, alpha=0.3)
-
+    pca_scatter(
+        vecs, op_labels, ax=axes[0],
+        color_map={"lookup": "#1f77b4", "counting": "#d62728"},
+        title=(f"Colored by OPERATION-TYPE\n"
+               f"separation = {op_stats['sep']:+.4f}, "
+               f"sil = {op_stats['sil']:+.4f}"),
+        show_variance=False,
+    )
+    pca_scatter(
+        vecs, word_labels, ax=axes[1],
+        color_map={"capital_present": "#2ca02c", "capital_absent": "#9467bd"},
+        title=(f"Colored by 'capital'-WORD-PRESENCE\n"
+               f"separation = {word_stats['sep']:+.4f}, "
+               f"sil = {word_stats['sil']:+.4f}"),
+        show_variance=False,
+    )
     fig.suptitle(
-        f"Operation-word disambiguation at layer {LAYER} (PCA var {var:.1%})",
+        f"Operation-word disambiguation at layer {LAYER}",
         fontsize=12,
     )
     plt.tight_layout()
@@ -171,23 +153,14 @@ def main():
         "B1_counting_capital_present": "#d62728",
         "B2_counting_capital_absent":  "#ff9896",
     }
-    cell_short = {
-        "A1_lookup_capital_present": "A1: lookup + capital",
-        "A2_lookup_capital_absent":  "A2: lookup, no capital",
-        "B1_counting_capital_present": "B1: counting + capital",
-        "B2_counting_capital_absent":  "B2: counting, no capital",
-    }
-    for c, _, mask in iterate_clusters(proj, cell_labels):
-        ax.scatter(proj[mask, 0], proj[mask, 1],
-                   c=cell_colors[c], label=cell_short[c],
-                   s=100, alpha=0.85, edgecolors="black", linewidths=0.5)
-    ax.set_title(f"Colored by all 4 cells (layer {LAYER})\n"
-                 f"4-cell NN hit rate: {nn_cell:.3f}, "
-                 f"4-cell purity: {cell_stats['purity']:.3f}")
-    ax.set_xlabel("PC1")
-    ax.set_ylabel("PC2")
-    ax.legend(loc="best", fontsize=9)
-    ax.grid(True, alpha=0.3)
+    pca_scatter(
+        vecs, cell_labels, ax=ax,
+        color_map=cell_colors,
+        title=(f"Colored by all 4 cells (layer {LAYER})\n"
+               f"4-cell NN hit rate: {nn_cell:.3f}, "
+               f"4-cell purity: {cell_stats['purity']:.3f}"),
+        show_variance=False,
+    )
     plt.tight_layout()
     out_path2 = OUT_DIR / "operation_disambiguation_4cell.png"
     fig.savefig(out_path2, dpi=140, bbox_inches="tight")

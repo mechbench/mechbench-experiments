@@ -44,7 +44,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from gemma4_mlx_interp import (  # noqa: E402
-    Model, Probe, Prompt, PromptSet, fact_vectors_pooled,
+    Model, Probe, Prompt, PromptSet, fact_vectors_pooled, intensity_curve,
 )
 from experiments.prompts import (  # noqa: E402
     EMOTION_NEUTRAL_BASELINE,
@@ -230,33 +230,25 @@ def main():
     }
     n_axes = len(INTENSITY_AXES)
     fig, axes = plt.subplots(n_axes, 2, figsize=(13, 3.5 * n_axes))
+    short_colors = {p.replace("emotion_", ""): c for p, c in probe_colors.items()}
+    short_names = [p.replace("emotion_", "") for p in probe_order]
     for row_idx, axis in enumerate(INTENSITY_AXES):
-        levels = axis["levels"]
         for col_idx, (label_text, scores) in enumerate([
             ("hand-curated (step_21)", results_orig[axis["key"]]),
             ("more-diverse (step_25)", results_gen[axis["key"]]),
         ]):
-            ax = axes[row_idx, col_idx]
-            for j, pname in enumerate(probe_order):
-                is_target = pname == axis["expected_up"]
-                is_antipode = pname == axis["expected_down"]
-                lw = 3 if is_target or is_antipode else 1.3
-                alpha = 1.0 if is_target or is_antipode else 0.55
-                lbl = pname.replace("emotion_", "")
-                if is_target: lbl += " (target ↑)"
-                elif is_antipode: lbl += " (antipode ↓)"
-                ax.plot(levels, scores[:, j], marker="o",
-                        linewidth=lw, alpha=alpha,
-                        color=probe_colors[pname], label=lbl)
-            ax.set_xscale("log")
-            ax.set_xlabel(axis["description"])
-            ax.set_ylabel("probe score")
-            ax.set_title(f"{axis['description']}\n[{label_text}]",
-                         fontsize=10)
-            ax.axhline(0, color="black", linewidth=0.5, alpha=0.3)
-            ax.grid(True, alpha=0.3)
-            if row_idx == 0:
-                ax.legend(loc="best", fontsize=7, ncol=2)
+            intensity_curve(
+                levels=axis["levels"],
+                scores=scores,
+                series_names=short_names,
+                target_up=(axis["expected_up"] or "").replace("emotion_", "") or None,
+                target_down=(axis["expected_down"] or "").replace("emotion_", "") or None,
+                colors=short_colors,
+                log_x=True,
+                xlabel=axis["description"],
+                title=f"{axis['description']}\n[{label_text}]",
+                ax=axes[row_idx, col_idx],
+            )
 
     fig.suptitle(
         "Intensity modulation: hand-curated (left) vs more-diverse "

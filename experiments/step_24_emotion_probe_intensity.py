@@ -36,7 +36,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from gemma4_mlx_interp import Model, Probe, Prompt, PromptSet  # noqa: E402
-from gemma4_mlx_interp import fact_vectors_pooled  # noqa: E402
+from gemma4_mlx_interp import fact_vectors_pooled, intensity_curve  # noqa: E402
 from experiments.prompts import (  # noqa: E402
     EMOTION_NEUTRAL_BASELINE, EMOTION_STORIES_TINY,
 )
@@ -209,31 +209,18 @@ def main():
     fig, axes = plt.subplots(2, 2, figsize=(14, 10))
     for ax, axis in zip(axes.flatten(), AXES):
         r = all_results[axis["key"]]
-        levels = r["levels"]
-        scores = r["scores"]
-        for j, pname in enumerate(probe_order):
-            is_target = pname == axis["expected_up"]
-            is_antipode = pname == axis["expected_down"]
-            lw = 3 if is_target or is_antipode else 1.3
-            alpha = 1.0 if is_target or is_antipode else 0.55
-            label = pname.replace("emotion_", "")
-            if is_target:
-                label += " (target ↑)"
-            elif is_antipode:
-                label += " (antipode ↓)"
-            ax.plot(
-                levels, scores[:, j],
-                marker="o", linewidth=lw, alpha=alpha,
-                color=probe_colors[pname], label=label,
-            )
-        if axis["log_x"]:
-            ax.set_xscale("log")
-        ax.set_xlabel(axis["description"])
-        ax.set_ylabel("probe score")
-        ax.set_title(axis["description"])
-        ax.axhline(0, color="black", linewidth=0.5, alpha=0.3)
-        ax.grid(True, alpha=0.3)
-        ax.legend(loc="best", fontsize=8, ncol=2)
+        intensity_curve(
+            levels=r["levels"],
+            scores=r["scores"],
+            series_names=[p.replace("emotion_", "") for p in probe_order],
+            target_up=(axis["expected_up"] or "").replace("emotion_", "") or None,
+            target_down=(axis["expected_down"] or "").replace("emotion_", "") or None,
+            colors={p.replace("emotion_", ""): c for p, c in probe_colors.items()},
+            log_x=axis["log_x"],
+            xlabel=axis["description"],
+            title=axis["description"],
+            ax=ax,
+        )
 
     fig.suptitle(
         "Intensity modulation: do probes respond monotonically to scalar axes?\n"

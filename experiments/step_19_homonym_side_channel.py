@@ -41,7 +41,8 @@ if str(ROOT) not in sys.path:
 from gemma4_mlx_interp import (  # noqa: E402
     Ablate, Model,
     cluster_purity, fact_vectors_at, intra_inter_separation,
-    iterate_clusters, nearest_neighbor_purity, silhouette_cosine,
+    iterate_clusters, nearest_neighbor_purity, pca_scatter,
+    silhouette_cosine,
 )
 from experiments.prompts import HOMONYM_CAPITAL_ALL  # noqa: E402
 
@@ -149,31 +150,21 @@ def main():
         "sense_uppercase": "#ff7f0e",
         "sense_punishment": "#d62728",
     }
-    sense_short = {
-        "sense_city": "city", "sense_finance": "finance",
-        "sense_uppercase": "uppercase", "sense_punishment": "punishment",
-    }
     for row_idx, L in enumerate(READOUT_LAYERS):
         for col_idx, (cond_name, vecs, stats) in enumerate([
             ("baseline", base_vecs[L], base_stats[L]),
             ("side-channel ablated", abl_vecs[L], abl_stats[L]),
         ]):
-            ax = axes[row_idx, col_idx]
-            proj = PCA(n_components=2, random_state=42).fit_transform(vecs)
-            for sense, _, mask in iterate_clusters(proj, labels):
-                ax.scatter(proj[mask, 0], proj[mask, 1],
-                           c=sense_colors[sense], label=sense_short[sense],
-                           s=70, alpha=0.85, edgecolors="black", linewidths=0.4)
-            ax.set_title(f"L{L} -- {cond_name}\n"
-                         f"sil={stats['sil']:+.3f}, NN={stats['nn_rate']:.2f}, "
-                         f"purity={stats['purity']:.2f}",
-                         fontsize=10)
-            ax.set_xlabel("PC1")
-            if col_idx == 0:
-                ax.set_ylabel("PC2")
-            if row_idx == 0 and col_idx == 0:
-                ax.legend(loc="best", fontsize=8)
-            ax.grid(True, alpha=0.3)
+            pca_scatter(
+                vecs, labels, ax=axes[row_idx, col_idx],
+                color_map=sense_colors,
+                title=(f"L{L} -- {cond_name}\n"
+                       f"sil={stats['sil']:+.3f}, NN={stats['nn_rate']:.2f}, "
+                       f"purity={stats['purity']:.2f}"),
+                show_variance=False,
+                show_legend=(row_idx == 0 and col_idx == 0),
+                s=70,
+            )
 
     fig.suptitle(
         "Side-channel ablation impact on 'capital' sense disambiguation\n"
