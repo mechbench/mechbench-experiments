@@ -36,7 +36,8 @@ if str(ROOT) not in sys.path:
 
 from gemma4_mlx_interp import (  # noqa: E402
     GLOBAL_LAYERS, Model, N_LAYERS,
-    get_head_spec, head_key_tokens, head_read_tokens, ov_circuit, qk_circuit,
+    get_head_spec, head_heatmap, head_key_tokens, head_read_tokens,
+    leaderboard_bar, ov_circuit, qk_circuit,
 )
 from gemma4_mlx_interp.head_weights import _unit_normalized_embed  # noqa: E402
 
@@ -133,43 +134,26 @@ def main():
 
     fig, axes = plt.subplots(1, 2, figsize=(14, 9))
 
-    # Panel 1: rank-0 OV singular value heatmap
-    ax = axes[0]
-    im = ax.imshow(sigma_0, aspect="auto", cmap="viridis",
-                   interpolation="nearest")
-    ax.set_xlabel("Q-head index")
-    ax.set_ylabel("layer")
-    ax.set_xticks(range(N_HEADS))
-    ax.set_yticks(range(0, N_LAYERS, 3))
-    ax.set_title("OV-circuit rank-0 singular value\n"
-                 f"(larger = stronger single-direction copy)", fontsize=10)
-    # Mark global layers with a left-edge band
-    for g in GLOBAL_LAYERS:
-        ax.axhline(g, color="red", linewidth=0.4, alpha=0.35, xmin=-0.02, xmax=0.02)
-    plt.colorbar(im, ax=ax)
+    head_heatmap(
+        sigma_0, ax=axes[0], cmap="viridis", diverging=False,
+        head_label="Q-head index",
+        title="OV-circuit rank-0 singular value\n"
+              "(larger = stronger single-direction copy)",
+    )
 
-    # Panel 2: Top-3 rank-0 OV sigma leaderboard (annotated)
-    ax = axes[1]
     flat = [(h["layer"], h["head"], h["ov_components"][0]["strength"],
              h["ov_components"][0]["writes"][0][0], h["is_global"])
             for h in all_heads]
     flat.sort(key=lambda x: -x[2])
     top20 = flat[:20]
-    ys = np.arange(len(top20))
-    values = [x[2] for x in top20]
-    colors = ["#d62728" if x[4] else "#1f77b4" for x in top20]
-    ax.barh(ys, values, color=colors)
-    ax.set_yticks(ys)
-    ax.set_yticklabels(
-        [f"L{L:>2} h{h}  {tok!r}" for L, h, _, tok, _ in top20],
-        fontsize=8,
+    leaderboard_bar(
+        items=[(f"L{L:>2} h{h}  {tok!r}", sigma) for L, h, sigma, tok, _ in top20],
+        color_groups=["global" if is_g else "local" for _, _, _, _, is_g in top20],
+        ax=axes[1],
+        xlabel="rank-0 OV singular value",
+        title="Top 20 heads by OV rank-0 strength\n"
+              "(red=global, blue=local; token = top write)",
     )
-    ax.invert_yaxis()
-    ax.set_xlabel("rank-0 OV singular value")
-    ax.set_title("Top 20 heads by OV rank-0 strength\n"
-                 "(red=global, blue=local; token = top write)",
-                 fontsize=10)
-    ax.grid(True, alpha=0.3, axis="x")
 
     fig.suptitle(
         "Static weight-level per-head analysis — Gemma 4 E4B",

@@ -42,7 +42,7 @@ if str(ROOT) not in sys.path:
 
 from gemma4_mlx_interp import (  # noqa: E402
     Capture, GLOBAL_LAYERS, Model, N_LAYERS, Probe,
-    silhouette_cosine,
+    head_heatmap, silhouette_cosine,
 )
 from experiments.prompts import (  # noqa: E402
     EMOTION_NEUTRAL_BASELINE, EMOTION_STORIES_TINY,
@@ -240,39 +240,23 @@ def main():
     # ---- Visualization ----
     fig, axes = plt.subplots(2, 3, figsize=(18, 10))
 
-    # Top row: silhouette heatmaps
     vmax = max(abs(sil_Q).max(), abs(sil_K).max(), abs(sil_V).max())
-    for col, (title, sil, nh) in enumerate([
-        ("Q-stream", sil_Q, N_Q_HEADS),
-        ("K-stream", sil_K, N_KV_HEADS),
-        ("V-stream", sil_V, N_KV_HEADS),
-    ]):
-        ax = axes[0, col]
-        im = ax.imshow(sil, aspect="auto", cmap="RdBu_r",
-                       vmin=-vmax, vmax=vmax, interpolation="nearest")
-        ax.set_xlabel("head")
-        ax.set_ylabel("layer")
-        ax.set_xticks(range(nh))
-        ax.set_yticks(range(0, N_LAYERS, 3))
-        ax.set_title(f"{title}: 6-emotion silhouette")
-        plt.colorbar(im, ax=ax, shrink=0.8)
-
-    # Bottom row: per-passage accuracy
     amax = max(acc_Q.max(), acc_K.max(), acc_V.max())
-    for col, (title, acc, nh) in enumerate([
-        ("Q-stream", acc_Q, N_Q_HEADS),
-        ("K-stream", acc_K, N_KV_HEADS),
-        ("V-stream", acc_V, N_KV_HEADS),
+
+    for col, (title, sil, acc) in enumerate([
+        ("Q-stream", sil_Q, acc_Q),
+        ("K-stream", sil_K, acc_K),
+        ("V-stream", sil_V, acc_V),
     ]):
-        ax = axes[1, col]
-        im = ax.imshow(acc, aspect="auto", cmap="viridis",
-                       vmin=0.0, vmax=amax, interpolation="nearest")
-        ax.set_xlabel("head")
-        ax.set_ylabel("layer")
-        ax.set_xticks(range(nh))
-        ax.set_yticks(range(0, N_LAYERS, 3))
-        ax.set_title(f"{title}: per-passage top-1 accuracy")
-        plt.colorbar(im, ax=ax, shrink=0.8)
+        head_heatmap(
+            sil, ax=axes[0, col], vmin=-vmax, vmax=vmax,
+            title=f"{title}: 6-emotion silhouette",
+        )
+        head_heatmap(
+            acc, ax=axes[1, col], cmap="viridis",
+            diverging=False, vmin=0.0, vmax=amax,
+            title=f"{title}: per-passage top-1 accuracy",
+        )
 
     fig.suptitle(
         "Per-head emotion probes across Q / K / V streams\n"

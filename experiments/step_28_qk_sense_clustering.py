@@ -33,7 +33,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from gemma4_mlx_interp import (  # noqa: E402
-    Capture, GLOBAL_LAYERS, Model, N_LAYERS,
+    Capture, GLOBAL_LAYERS, Model, N_LAYERS, head_heatmap,
     nearest_neighbor_purity, silhouette_cosine,
 )
 from gemma4_mlx_interp.geometry import _resolve_position  # noqa: E402
@@ -146,30 +146,17 @@ def main():
     # ---- Visualization: (layer, head) heatmaps for Q and K silhouette ----
     fig, axes = plt.subplots(1, 2, figsize=(13, 9),
                               gridspec_kw={"width_ratios": [N_HEADS, N_KV_HEADS]})
-
-    ax = axes[0]
     vmax = max(abs(sil_Q).max(), abs(sil_K).max())
-    im = ax.imshow(sil_Q, aspect="auto", cmap="RdBu_r",
-                   vmin=-vmax, vmax=vmax, interpolation="nearest")
-    ax.set_xlabel("Q-head")
-    ax.set_ylabel("layer")
-    ax.set_xticks(range(N_HEADS))
-    ax.set_yticks(range(0, N_LAYERS, 3))
-    ax.set_title("Per-(layer, Q-head)\nsense silhouette at 'capital'")
-    for g in GLOBAL_LAYERS:
-        ax.axhline(g - 0.5, color="red", linewidth=0.2, alpha=0.3,
-                   xmin=-0.02, xmax=0)
-    plt.colorbar(im, ax=ax, shrink=0.8)
-
-    ax = axes[1]
-    im = ax.imshow(sil_K, aspect="auto", cmap="RdBu_r",
-                   vmin=-vmax, vmax=vmax, interpolation="nearest")
-    ax.set_xlabel("KV-head")
-    ax.set_ylabel("layer")
-    ax.set_xticks(range(N_KV_HEADS))
-    ax.set_yticks(range(0, N_LAYERS, 3))
-    ax.set_title("Per-(layer, KV-head)\nsense silhouette at 'capital'")
-    plt.colorbar(im, ax=ax, shrink=0.8)
+    head_heatmap(
+        sil_Q, ax=axes[0], vmin=-vmax, vmax=vmax,
+        head_label="Q-head",
+        title="Per-(layer, Q-head)\nsense silhouette at 'capital'",
+    )
+    head_heatmap(
+        sil_K, ax=axes[1], vmin=-vmax, vmax=vmax,
+        head_label="KV-head",
+        title="Per-(layer, KV-head)\nsense silhouette at 'capital'",
+    )
 
     fig.suptitle(
         "QK geometric sense-separation at the 'capital' position across "

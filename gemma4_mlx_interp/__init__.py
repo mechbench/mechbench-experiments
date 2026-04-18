@@ -95,10 +95,13 @@ from .lens import logit_lens_final, logit_lens_per_position
 from .model import Model, RunResult
 from .plot import (
     bar_by_layer,
+    head_heatmap,
+    leaderboard_bar,
     lens_trajectory,
     logprob_trajectory,
     pca_scatter,
     position_heatmap,
+    probe_diagonal_heatmap,
     similarity_heatmap,
 )
 from .prompts import (
@@ -173,6 +176,9 @@ __all__ = [
     "position_heatmap",
     "pca_scatter",
     "similarity_heatmap",
+    "head_heatmap",
+    "probe_diagonal_heatmap",
+    "leaderboard_bar",
     # Hook types (for users writing raw callbacks)
     "HookInfo",
     "HookFn",

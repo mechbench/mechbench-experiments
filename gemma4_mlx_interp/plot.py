@@ -1,16 +1,23 @@
 """Matplotlib plot helpers with project conventions baked in.
 
-Five helpers covering every plot style used by the existing experiments:
+Eight helpers covering the recurring chart styles in this project's
+experiments:
 
-  bar_by_layer        per-layer bar chart with red=global / blue=local conventions
-                      (step_02/03/04)
-  lens_trajectory     per-layer rank or log-probability curves with optional
-                      geometric-mean aggregation (step_01)
-  position_heatmap    [layer x position] heatmap with subject and global-layer
-                      markers (step_08/09)
-  pca_scatter         2D PCA projection colored by category (step_10/12/13)
-  similarity_heatmap  pairwise cosine, reordered to be block-diagonal by
-                      category (step_10/12)
+  bar_by_layer            per-layer bar chart with red=global / blue=local
+                          conventions (step_02/03/04)
+  lens_trajectory         per-layer rank curves with optional geometric-mean
+                          aggregation (step_01)
+  logprob_trajectory      per-layer log-probability curves (step_01 variant)
+  position_heatmap        [layer x position] heatmap with subject and global-
+                          layer markers (step_08/09)
+  pca_scatter             2D PCA projection colored by category (step_10/12/13)
+  similarity_heatmap      pairwise cosine, reordered block-diagonal (step_10/12)
+  head_heatmap            [n_layers x n_heads] per-head metric heatmap with
+                          global-layer markers (step_26/28/29)
+  probe_diagonal_heatmap  true x predicted aggregated scoring grid with
+                          per-cell text annotations (step_21/23)
+  leaderboard_bar         ranked horizontal bar chart with text labels and
+                          global/local color coding (step_26)
 
 API contract:
   - Inputs are numpy arrays.
@@ -450,4 +457,197 @@ def similarity_heatmap(
     if colorbar:
         plt.colorbar(im, ax=ax, shrink=0.8)
 
+    return ax
+
+
+# ---------------------------------------------------------------------------
+# head_heatmap
+# ---------------------------------------------------------------------------
+
+
+def head_heatmap(
+    values: np.ndarray,
+    *,
+    ax: Optional[Axes] = None,
+    cmap: str = "RdBu_r",
+    vmin: Optional[float] = None,
+    vmax: Optional[float] = None,
+    diverging: bool = True,
+    mark_global_layers: bool = True,
+    layer_label: str = "layer",
+    head_label: str = "head",
+    yticks_step: int = 3,
+    title: Optional[str] = None,
+    colorbar: bool = True,
+    colorbar_label: str = "",
+    figsize: tuple[float, float] = (5, 9),
+) -> Axes:
+    """Per-(layer, head) metric heatmap.
+
+    Args:
+        values: 2D array shape [n_layers, n_heads] (n_heads can be 8 for
+            Q-heads or 2 for KV-heads in Gemma 4 E4B).
+        diverging: if True, the colormap is symmetric around zero (vmin/vmax
+            set to ±max-abs unless overridden). Use False for non-negative
+            metrics like accuracy.
+        mark_global_layers: draw small red ticks at GLOBAL_LAYERS rows.
+        title / colorbar_label: optional labels.
+
+    Used by step_26 (rank-0 OV singular values), step_28 (Q/K silhouette),
+    step_29 (Q/K/V silhouette and accuracy).
+    """
+    ax = _ensure_axes(ax, figsize=figsize)
+    arr = np.asarray(values)
+    n_layers, n_heads = arr.shape
+
+    if diverging:
+        if vmin is None or vmax is None:
+            m = float(np.abs(arr).max())
+            vmin = -m if vmin is None else vmin
+            vmax = m if vmax is None else vmax
+    else:
+        if vmin is None:
+            vmin = float(arr.min())
+        if vmax is None:
+            vmax = float(arr.max())
+
+    im = ax.imshow(arr, aspect="auto", cmap=cmap,
+                   vmin=vmin, vmax=vmax, interpolation="nearest")
+    ax.set_xlabel(head_label)
+    ax.set_ylabel(layer_label)
+    ax.set_xticks(range(n_heads))
+    ax.set_yticks(range(0, n_layers, yticks_step))
+
+    if mark_global_layers:
+        # Small red ticks on the left edge marking each global layer.
+        for g in GLOBAL_LAYERS:
+            if g < n_layers:
+                ax.axhline(g, color="red", linewidth=0.4, alpha=0.4,
+                           xmin=-0.02, xmax=0.0)
+
+    if title:
+        ax.set_title(title, fontsize=10)
+    if colorbar:
+        plt.colorbar(im, ax=ax, shrink=0.8, label=colorbar_label)
+
+    return ax
+
+
+# ---------------------------------------------------------------------------
+# probe_diagonal_heatmap
+# ---------------------------------------------------------------------------
+
+
+def probe_diagonal_heatmap(
+    values: np.ndarray,
+    row_labels: list[str],
+    col_labels: list[str],
+    *,
+    ax: Optional[Axes] = None,
+    cmap: str = "RdBu_r",
+    annotate: bool = True,
+    annotation_format: str = "+.2f",
+    annotation_threshold: float = 0.5,
+    title: Optional[str] = None,
+    colorbar: bool = True,
+    colorbar_label: str = "score",
+    figsize: tuple[float, float] = (8, 6),
+) -> Axes:
+    """Aggregated probe-vs-target scoring heatmap (e.g. emotion probes scored
+    on emotion training corpus).
+
+    Args:
+        values: [len(row_labels), len(col_labels)] score matrix. Rows
+            typically = true category, columns = probe under test.
+        row_labels / col_labels: axis tick labels.
+        annotate: write each cell value on the heatmap.
+        annotation_format: format-string for cell text (e.g. '+.2f', '.3f').
+        annotation_threshold: when |value| / |values|.max() exceeds this
+            fraction, the annotation is drawn white instead of black for
+            readability against dark cells.
+
+    Used by step_21 (emotion-probe self-consistency), step_23 (implicit-
+    scenario validation).
+    """
+    ax = _ensure_axes(ax, figsize=figsize)
+    arr = np.asarray(values)
+    vmax_abs = float(np.abs(arr).max()) if arr.size > 0 else 1.0
+
+    im = ax.imshow(arr, aspect="auto", cmap=cmap,
+                   vmin=-vmax_abs, vmax=vmax_abs, interpolation="nearest")
+    ax.set_xticks(range(len(col_labels)))
+    ax.set_xticklabels(col_labels, rotation=30, ha="right")
+    ax.set_yticks(range(len(row_labels)))
+    ax.set_yticklabels(row_labels)
+
+    if annotate:
+        for i in range(arr.shape[0]):
+            for j in range(arr.shape[1]):
+                v = arr[i, j]
+                color = ("white"
+                         if abs(v) > vmax_abs * annotation_threshold
+                         else "black")
+                ax.text(j, i, format(v, annotation_format),
+                        ha="center", va="center",
+                        color=color, fontsize=8)
+
+    if title:
+        ax.set_title(title, fontsize=11)
+    if colorbar:
+        plt.colorbar(im, ax=ax, shrink=0.8, label=colorbar_label)
+
+    return ax
+
+
+# ---------------------------------------------------------------------------
+# leaderboard_bar
+# ---------------------------------------------------------------------------
+
+
+def leaderboard_bar(
+    items: list[tuple[str, float]],
+    *,
+    ax: Optional[Axes] = None,
+    color_groups: Optional[list[str]] = None,
+    color_global: str = COLOR_GLOBAL,
+    color_local: str = COLOR_LOCAL,
+    default_color: str = "#888888",
+    title: Optional[str] = None,
+    xlabel: Optional[str] = None,
+    figsize: tuple[float, float] = (8, 9),
+) -> Axes:
+    """Ranked horizontal bar chart with text labels per bar.
+
+    Args:
+        items: list of (label, value) tuples, already sorted by value.
+        color_groups: optional list of same length as items, one of
+            'global' / 'local' / None per bar; sets bar color.
+        title / xlabel: optional labels.
+
+    Used by step_26's top-20 heads by OV rank-0 sigma.
+    """
+    ax = _ensure_axes(ax, figsize=figsize)
+    n = len(items)
+    ys = np.arange(n)
+    values = [v for _, v in items]
+
+    if color_groups:
+        colors = [
+            color_global if g == "global"
+            else color_local if g == "local"
+            else default_color
+            for g in color_groups
+        ]
+    else:
+        colors = [default_color] * n
+
+    ax.barh(ys, values, color=colors)
+    ax.set_yticks(ys)
+    ax.set_yticklabels([label for label, _ in items], fontsize=8)
+    ax.invert_yaxis()
+    if xlabel:
+        ax.set_xlabel(xlabel)
+    if title:
+        ax.set_title(title, fontsize=10)
+    ax.grid(True, alpha=0.3, axis="x")
     return ax
