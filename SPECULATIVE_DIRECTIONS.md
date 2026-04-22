@@ -62,7 +62,31 @@ Run the same prompt through a model under different mechbench-instrumented condi
 
 A researcher states a claim: "the model uses L23 as the last fresh-K/V-global layer for content integration." Mechbench runs a battery of pre-designed tests: does ablating L23 hurt downstream tasks? Does the activation direction rotate at L22→L23? Does the effect disappear when L17 is substituted? Each test is a primitive; the claim is a composition of passing tests. Over time, a library of *proved interp claims* accumulates — each one a reproducible experiment attached to a specific assertion. Closer to how interpretability should work as a field, versus its current form of "one person's notebook showing an interesting plot."
 
-## 14. Agent self-instrumentation: interp primitives as model-callable tools
+## 14. Backward-pass and training-dynamics interpretability
+
+Almost all interp work today — this project included — focuses on the forward pass: what the model computes given a fixed set of weights. But models are not static artifacts; they are the end state of a training process that flows gradients backward through the same architecture forward inference uses. The backward pass is where *learning* actually happens, and it is a largely unexplored interpretability surface.
+
+Several specific directions open up once a framework supports backward-pass instrumentation:
+
+**Training-pressure mapping.** The narrative of L23's load-bearing role in Gemma 4 E4B is, at root, a claim about gradient flow: training pressure concentrates at architectural bottlenecks where specific mechanisms (fresh-K/V global attention on a deep residual) are available. With backward hooks we could observe this directly — measure per-layer gradient magnitude during training, watch it concentrate at L23 over time, and confirm (or refute) that the cross-task L23 pivot is indeed an emergent consequence of gradient competition for a narrow architectural resource.
+
+**Concept emergence across checkpoints.** Probe vectors are stable with respect to a fixed model. But they are not stable across training checkpoints: at the start of training, probes for "happy" or "nation" don't yet exist as learnable directions. Somewhere during pretraining, the concept emerges — maybe gradually, maybe in a phase transition, maybe non-monotonically. A mechbench-instrumented training run could checkpoint probe geometry every N steps and produce a time-series of concept formation. The L23 structural hub presumably wasn't present at step 0; when did it crystallize? What training-data features were being seen at that moment?
+
+**Per-example influence analysis.** For a specific training example, which weights receive the largest gradients? Which parts of the model are being updated most, and which pass through unchanged? A version of influence functions but computed during actual training rather than retrofitted afterward. This is the right way to understand what a specific data point is teaching the model.
+
+**RL-specific dynamics.** Reinforcement learning shapes gradients differently than supervised fine-tuning. The KL penalty to a reference policy produces one gradient signature; the reward-model signal produces another. Watching how different RL components distribute their influence across layers, heads, and residual subspaces would turn training-time choices (PPO vs DPO, KL coefficient, reward-model architecture) into empirically-observable interventions rather than hyperparameter tweaks.
+
+**Catastrophic-forgetting and repurposing diagnostics.** During fine-tuning, which representations get overwritten? Which concept probes shift, and by how much? Diff the probe geometry before and after a fine-tuning run and you have a direct measurement of what was lost, what was preserved, and what was added. Useful for alignment research (understanding what RLHF actually changes) and for practical fine-tuners (diagnosing when a fine-tune has eroded a capability that should have been preserved).
+
+**Curriculum and data-mix effects.** Different training data distributes its influence differently. Watching gradient magnitudes and directions during training on code vs. prose vs. math vs. multilingual text would turn the "what does pretraining data actually do to the model" question into a measurable time series. Useful for training-data curation choices; useful for understanding how multimodal and multilingual capabilities are acquired.
+
+**Live training dashboard.** Real-time instrumentation during training runs — probes, gradient flow, per-layer update magnitudes — rendered as a live mechbench view. Instead of watching training loss and guessing at what the model is doing, watch concept probes emerge, see gradient pressure shift across epochs, detect training pathologies (mode collapse, gradient explosion, KL runaway) as they happen rather than at checkpoint-inspection time.
+
+Technically, this extends mechbench's scope in a meaningful way. Interp primitives need to support backward hooks and gradient capture (beads-bge in the TL-parity epic already addresses this). The dual-path forward-pass selection extends to a dual-path training step: one fast path for standard training, one instrumented path for gradient analysis. The memoization layer has to account for weight state at specific checkpoints. The emission schema needs to represent gradient-valued data in addition to activation-valued data.
+
+The payoff is that mechbench becomes a tool for *both* kinds of interpretability: understanding a trained model (today's focus) and understanding *how it became trained* (this direction). That second mode is closer to where AI safety research actually needs to live — you can't align behavior you don't understand, and you can't understand behavior whose training dynamics you can't observe. The forward-pass-only framing leaves that half of the problem untouched.
+
+## 15. Agent self-instrumentation: interp primitives as model-callable tools
 
 Expose mechbench's primitives as callable tools an agent can invoke on its own forward pass. Before answering a hard question, the agent calls `mechbench.capture(layers=[17, 23, 29], hook_points=['resid_post', 'attn.q'])` to instrument its next inference step. Then in a follow-up tool call, it retrieves the captured artifacts and reasons about them: "I notice my L23 residual in this response was unusually far from the nearest emotion-probe centroid — let me reconsider whether I'm answering in the mode this user expected." A form of metacognition that isn't just chain-of-thought over text, but literal introspection over one's own activations.
 
@@ -81,7 +105,7 @@ A mechbench platform that exposes its primitives as tools would be the natural p
 The ideas above sit at different distances from current capability. As a rough sorting:
 
 - **Technically immediate** given the existing primitive layer: the probe market (#2), probe algebra (#3), save-game cognitive states (#6), functional interpretability via perturbation (#12).
-- **Medium-range** — requires sustained framework maturation plus new infrastructure: interp-guided fine-tuning (#7), cross-model concept translation (#4), theorem-proving interp (#13), semantic weight diff (#9), agent self-instrumentation (#14).
+- **Medium-range** — requires sustained framework maturation plus new infrastructure: interp-guided fine-tuning (#7), cross-model concept translation (#4), theorem-proving interp (#13), semantic weight diff (#9), backward-pass and training-dynamics interp (#14), agent self-instrumentation (#15).
 - **Long-range** — dependent on external capability advances, larger user bases, or substantial product surfaces that don't yet exist: live instrumentation (#1), consumer interp product (#5), VR workspaces (#8), interp firewall (#10), structured-interview UI (#11).
 
 Any of these could move up the list quickly if the project finds itself wanting to build in that direction. Equally, any of them could be removed from the list as experience shows they're not actually worth pursuing. This is not a roadmap — it's an imagination budget.
