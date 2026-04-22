@@ -62,6 +62,18 @@ Run the same prompt through a model under different mechbench-instrumented condi
 
 A researcher states a claim: "the model uses L23 as the last fresh-K/V-global layer for content integration." Mechbench runs a battery of pre-designed tests: does ablating L23 hurt downstream tasks? Does the activation direction rotate at L22→L23? Does the effect disappear when L17 is substituted? Each test is a primitive; the claim is a composition of passing tests. Over time, a library of *proved interp claims* accumulates — each one a reproducible experiment attached to a specific assertion. Closer to how interpretability should work as a field, versus its current form of "one person's notebook showing an interesting plot."
 
+## 14. Agent self-instrumentation: interp primitives as model-callable tools
+
+Expose mechbench's primitives as callable tools an agent can invoke on its own forward pass. Before answering a hard question, the agent calls `mechbench.capture(layers=[17, 23, 29], hook_points=['resid_post', 'attn.q'])` to instrument its next inference step. Then in a follow-up tool call, it retrieves the captured artifacts and reasons about them: "I notice my L23 residual in this response was unusually far from the nearest emotion-probe centroid — let me reconsider whether I'm answering in the mode this user expected." A form of metacognition that isn't just chain-of-thought over text, but literal introspection over one's own activations.
+
+This is qualitatively different from #1 (live instrumentation as an external observer watching the model from outside). Self-instrumentation is the model instrumenting *itself*, with tool results that flow back into its own context as legitimate reasoning material. It opens questions that don't currently have good answers: if a model can read its own L23 probe activations, can it learn to modulate them? If it can see which heads were firing during a previous response, can it use that signal to debug its own reasoning? If an agent in a multi-turn conversation notices its "deception probe" activated at turn three, what does it do with that information?
+
+Technically, this requires a forward-pass harness that can be interrupted, instrumented, and resumed — the "save-game" state from #6 is a prerequisite. It also requires a careful account of what activation data is safe to expose to the model itself, which is a nontrivial safety question. Some activation signals (uncertainty, concept activations) seem fine to surface. Others (internal representations of the user, self-evaluation circuits) might create feedback loops whose consequences are harder to reason about.
+
+But if it works, it changes what it means to be an AI agent. Current agents reason in text over their external observations. A self-instrumented agent reasons in text over its own internal states, grounded in real measurements rather than in verbal approximations of those states. The gap between "I think I was confident about that answer" and "I measured my L23 entropy-probe activation and it was 0.72, which is higher than my typical confident-answer baseline of 0.34" is the gap between introspection-as-confabulation and introspection-as-measurement.
+
+A mechbench platform that exposes its primitives as tools would be the natural place to prototype this. The primitives are there; the emission schema is there; the only missing piece is the tool-call wrapping and the harness that routes the results back into the agent's context window.
+
 ---
 
 ## Rough near-term viability
@@ -69,7 +81,7 @@ A researcher states a claim: "the model uses L23 as the last fresh-K/V-global la
 The ideas above sit at different distances from current capability. As a rough sorting:
 
 - **Technically immediate** given the existing primitive layer: the probe market (#2), probe algebra (#3), save-game cognitive states (#6), functional interpretability via perturbation (#12).
-- **Medium-range** — requires sustained framework maturation plus new infrastructure: interp-guided fine-tuning (#7), cross-model concept translation (#4), theorem-proving interp (#13), semantic weight diff (#9).
+- **Medium-range** — requires sustained framework maturation plus new infrastructure: interp-guided fine-tuning (#7), cross-model concept translation (#4), theorem-proving interp (#13), semantic weight diff (#9), agent self-instrumentation (#14).
 - **Long-range** — dependent on external capability advances, larger user bases, or substantial product surfaces that don't yet exist: live instrumentation (#1), consumer interp product (#5), VR workspaces (#8), interp firewall (#10), structured-interview UI (#11).
 
 Any of these could move up the list quickly if the project finds itself wanting to build in that direction. Equally, any of them could be removed from the list as experience shows they're not actually worth pursuing. This is not a roadmap — it's an imagination budget.
