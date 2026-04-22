@@ -46,14 +46,22 @@ class HookInfo:
 HookFn = Callable[[mx.array, HookInfo], Optional[mx.array]]
 
 
-def parse_hook_name(name: str) -> HookInfo:
+def parse_hook_name(name: str, arch: "_arch.Arch | None" = None) -> HookInfo:
     """Parse and validate a hook-point name.
 
     Accepts top-level names (those in _arch.GLOBAL_HOOK_POINTS) and layer-
     scoped names of the form 'blocks.{i}.{point}'. Raises InvalidHookName
     on unrecognized names; raises LayerIndexOutOfRange if the layer index
-    is outside [0, N_LAYERS).
+    is outside [0, arch.n_layers).
+
+    Args:
+        name: The hook-point name to validate.
+        arch: The model's Arch (per-variant config). If None, defaults to
+            the E4B layer count for backward compatibility with callers
+            that haven't been ported to pass `model.arch`.
     """
+    a = arch if arch is not None else _arch.E4B_DEFAULT
+
     if name in _arch.GLOBAL_HOOK_POINTS:
         return HookInfo(name=name, layer=None, point=name)
 
@@ -65,20 +73,21 @@ def parse_hook_name(name: str) -> HookInfo:
             i_str, point = rest.split(".", 1)
             layer_idx = int(i_str)
         except ValueError:
-            raise InvalidHookName(name, _arch.all_hook_names())
+            raise InvalidHookName(name, a.all_hook_names())
 
-        if not (0 <= layer_idx < _arch.N_LAYERS):
-            raise LayerIndexOutOfRange(layer_idx, _arch.N_LAYERS)
+        if not (0 <= layer_idx < a.n_layers):
+            raise LayerIndexOutOfRange(layer_idx, a.n_layers)
 
         if point not in _arch.LAYER_HOOK_POINTS:
-            raise InvalidHookName(name, _arch.all_hook_names())
+            raise InvalidHookName(name, a.all_hook_names())
 
         return HookInfo(name=name, layer=layer_idx, point=point)
 
-    raise InvalidHookName(name, _arch.all_hook_names())
+    raise InvalidHookName(name, a.all_hook_names())
 
 
-def attn_internal_layers(hook_names: set[str]) -> set[int]:
+def attn_internal_layers(hook_names: set[str],
+                         arch: "_arch.Arch | None" = None) -> set[int]:
     """Return the set of layer indices at which the manual attention path
     must run because some hook or capture targets attention internals there.
 
@@ -91,7 +100,7 @@ def attn_internal_layers(hook_names: set[str]) -> set[int]:
     """
     out: set[int] = set()
     for n in hook_names:
-        info = parse_hook_name(n)
+        info = parse_hook_name(n, arch=arch)
         if info.point in _arch.ATTN_INTERNAL_POINTS and info.layer is not None:
             out.add(info.layer)
     return out

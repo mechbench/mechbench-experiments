@@ -97,21 +97,26 @@ class Model:
             print(f"{tok!r:20s} p={p:.4f}")
     """
 
-    def __init__(self, model, processor):
+    def __init__(self, model, processor, arch: _arch.Arch | None = None):
         self._model = model
         self._processor = processor
+        self.arch = arch if arch is not None else _arch.Arch.from_mlx_model(model)
 
     @classmethod
     def load(cls, model_id: str = _arch.DEFAULT_MODEL_ID) -> "Model":
         """Load a model from the HuggingFace cache.
 
-        For Gemma 4 E4B specifically you don't need to pass model_id — the
-        default points to the bf16 weights. Other model IDs are NOT
-        supported in v0; the framework hard-codes E4B-specific architectural
-        constants.
+        Defaults to Gemma 4 E4B bf16. Any Gemma 4 family checkpoint that
+        mlx-vlm can load works (E2B, E4B, future variants); per-model
+        dimensions are read from the loaded config and bundled into
+        `self.arch` (an `Arch` dataclass). Module-level constants like
+        `N_LAYERS` continue to reflect the E4B defaults regardless of
+        which variant was loaded — use `model.arch.n_layers` for code
+        that should adapt.
         """
         m, p = load(model_id)
-        return cls(m, p)
+        arch = _arch.Arch.from_mlx_model(m, model_id=model_id)
+        return cls(m, p, arch=arch)
 
     @property
     def tokenizer(self):
@@ -181,13 +186,14 @@ class Model:
         self._validate_hook_names(set(final_hooks.keys()) | set(final_capture))
         logits, cache = run_forward(
             self._model, input_ids, hooks=final_hooks, capture=final_capture,
+            arch=self.arch,
         )
         return RunResult(logits=logits, cache=cache)
 
     def _validate_hook_names(self, names: Iterable[str]) -> None:
         """Validate every name; raises on the first invalid one."""
         for n in names:
-            parse_hook_name(n)
+            parse_hook_name(n, arch=self.arch)
 
     def project_to_logits(self, residual: mx.array) -> mx.array:
         """Apply the model's final RMSNorm + tied unembed (+ optional softcap)

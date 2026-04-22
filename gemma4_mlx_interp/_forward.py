@@ -30,6 +30,7 @@ from mlx_vlm.models import cache as cache_mod
 from mlx_vlm.models.base import create_attention_mask
 from mlx_vlm.models.gemma4.language import logit_softcap
 
+from . import _arch
 from .cache import ActivationCache
 from .hooks import HookFn, HookInfo, attn_internal_layers
 
@@ -199,6 +200,7 @@ def run_forward(
     *,
     hooks: dict[str, HookFn] | None = None,
     capture: list[str] | None = None,
+    arch: _arch.Arch | None = None,
 ) -> tuple[mx.array, ActivationCache]:
     """Run a single forward pass through Gemma 4 E4B.
 
@@ -218,7 +220,9 @@ def run_forward(
     # internals. Other layers stay on the fused path. This keeps the residual
     # stream bitwise-equivalent with mlx_vlm's standard forward at every
     # layer the user isn't actively probing.
-    manual_attn_layer_set = attn_internal_layers(set(hooks.keys()) | capture_set)
+    manual_attn_layer_set = attn_internal_layers(
+        set(hooks.keys()) | capture_set, arch=arch,
+    )
 
     cache = ActivationCache()
     lm = model.language_model

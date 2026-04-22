@@ -37,6 +37,7 @@ The full list of hook points is at gemma4_mlx_interp.all_hook_names().
 """
 
 from ._arch import (
+    Arch,
     DEFAULT_MODEL_ID,
     D_MODEL,
     GLOBAL_LAYERS,
@@ -188,6 +189,7 @@ __all__ = [
     "HookFn",
     "parse_hook_name",
     # Architecture facts
+    "Arch",
     "DEFAULT_MODEL_ID",
     "N_LAYERS",
     "D_MODEL",
