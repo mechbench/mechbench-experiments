@@ -26,7 +26,7 @@ mlx_vlm.generate is broken for our model and rolling a naive
 autoregressive loop was taking 30+ minutes of local compute. Since the
 probe is built from Gemma 4's ACTIVATIONS on the text, any competent
 emotion-labeled corpus works the same way; the generator does not need
-to be the target model. See gemma4_mlx_interp/generate.py for the
+to be the target model. See mechbench_core/generate.py for the
 framework primitive used when the target and generator are the same.)
 
 Run from project root:
@@ -43,7 +43,7 @@ ROOT = Path(__file__).resolve().parent.parent
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from gemma4_mlx_interp import (  # noqa: E402
+from mechbench_core import (  # noqa: E402
     Model, Probe, Prompt, PromptSet, fact_vectors_pooled, intensity_curve,
 )
 from experiments.prompts import (  # noqa: E402

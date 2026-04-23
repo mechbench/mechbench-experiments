@@ -38,7 +38,7 @@ ROOT = Path(__file__).resolve().parent.parent
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from gemma4_mlx_interp import (  # noqa: E402
+from mechbench_core import (  # noqa: E402
     Ablate, Model,
     cluster_purity, fact_vectors_at, intra_inter_separation,
     iterate_clusters, nearest_neighbor_purity, pca_scatter,

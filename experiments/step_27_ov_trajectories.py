@@ -40,10 +40,10 @@ ROOT = Path(__file__).resolve().parent.parent
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from gemma4_mlx_interp import (  # noqa: E402
+from mechbench_core import (  # noqa: E402
     Model, head_ov_actual_writes, head_ov_position_writes,
 )
-from gemma4_mlx_interp.head_weights import _embed_matrix_f32  # noqa: E402
+from mechbench_core.head_weights import _embed_matrix_f32  # noqa: E402
 
 OUT_DIR = ROOT / "caches"
 

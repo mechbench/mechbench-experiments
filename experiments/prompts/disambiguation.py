@@ -19,7 +19,7 @@ Subject for B1/B2: the operand word being counted.
 
 from __future__ import annotations
 
-from gemma4_mlx_interp import Prompt, PromptSet
+from mechbench_core import Prompt, PromptSet
 
 _COUNTRIES = ("France", "Japan", "Germany", "Italy",
               "Spain", "Russia", "Egypt", "Greece")

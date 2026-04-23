@@ -10,13 +10,9 @@ requires-python = ">=3.11"
 license = { text = "MIT" }
 
 dependencies = [
-    "mlx>=0.31",
-    "mlx-lm>=0.31",
-    "mlx-vlm>=0.4",
-    "numpy>=2.0",
-    "matplotlib>=3.10",
+    "mechbench-core>=0.1",
     "scikit-learn>=1.7",
 ]
 
-[tool.setuptools.packages.find]
-include = ["gemma4_mlx_interp*"]
+[tool.setuptools]
+py-modules = []

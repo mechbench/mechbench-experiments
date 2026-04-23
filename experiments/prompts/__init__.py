@@ -1,7 +1,7 @@
 """Prompt collections used by this project's experiments.
 
 These are project-specific data, not framework infrastructure — the
-gemma4_mlx_interp framework supplies the Prompt / PromptSet classes; this
+mechbench_core framework supplies the Prompt / PromptSet classes; this
 package supplies the specific instances we've curated.
 
   FACTUAL_15           — used by step_01 through step_09

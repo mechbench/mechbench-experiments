@@ -29,7 +29,7 @@ ROOT = Path(__file__).resolve().parent.parent
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from gemma4_mlx_interp import (  # noqa: E402
+from mechbench_core import (  # noqa: E402
     Model, PromptSet,
     cluster_purity, cosine_matrix, fact_vectors_at,
     intra_inter_separation, nearest_neighbor_purity,

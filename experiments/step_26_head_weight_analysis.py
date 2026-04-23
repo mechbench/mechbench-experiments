@@ -34,12 +34,12 @@ ROOT = Path(__file__).resolve().parent.parent
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from gemma4_mlx_interp import (  # noqa: E402
+from mechbench_core import (  # noqa: E402
     GLOBAL_LAYERS, Model, N_LAYERS,
     get_head_spec, head_heatmap, head_key_tokens, head_read_tokens,
     leaderboard_bar, ov_circuit, qk_circuit,
 )
-from gemma4_mlx_interp.head_weights import _unit_normalized_embed  # noqa: E402
+from mechbench_core.head_weights import _unit_normalized_embed  # noqa: E402
 
 OUT_DIR = ROOT / "caches"
 N_HEADS = 8

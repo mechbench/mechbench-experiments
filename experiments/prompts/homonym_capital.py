@@ -20,7 +20,7 @@ so the substring match is unambiguous.
 
 from __future__ import annotations
 
-from gemma4_mlx_interp import Prompt, PromptSet
+from mechbench_core import Prompt, PromptSet
 
 _CITY_TEXTS = (
     "The capital of France is Paris.",

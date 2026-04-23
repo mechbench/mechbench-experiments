@@ -31,11 +31,11 @@ ROOT = Path(__file__).resolve().parent.parent
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from gemma4_mlx_interp import Model, Probe  # noqa: E402
+from mechbench_core import Model, Probe  # noqa: E402
 from experiments.prompts import (  # noqa: E402
     EMOTION_NEUTRAL_BASELINE, EMOTION_STORIES_TINY,
 )
-from gemma4_mlx_interp import fact_vectors_pooled  # noqa: E402
+from mechbench_core import fact_vectors_pooled  # noqa: E402
 
 OUT_DIR = ROOT / "caches"
 LAYER = 28

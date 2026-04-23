@@ -25,7 +25,7 @@ ROOT = Path(__file__).resolve().parent.parent
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from gemma4_mlx_interp import Ablate, Model  # noqa: E402
+from mechbench_core import Ablate, Model  # noqa: E402
 from experiments.prompts import FACTUAL_15  # noqa: E402
 
 OUT_DIR = ROOT / "caches"

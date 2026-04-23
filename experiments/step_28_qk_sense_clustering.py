@@ -32,11 +32,11 @@ ROOT = Path(__file__).resolve().parent.parent
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from gemma4_mlx_interp import (  # noqa: E402
+from mechbench_core import (  # noqa: E402
     Capture, GLOBAL_LAYERS, Model, N_LAYERS, head_heatmap,
     nearest_neighbor_purity, silhouette_cosine,
 )
-from gemma4_mlx_interp.geometry import _resolve_position  # noqa: E402
+from mechbench_core.geometry import _resolve_position  # noqa: E402
 from experiments.prompts import HOMONYM_CAPITAL_ALL  # noqa: E402
 
 OUT_DIR = ROOT / "caches"

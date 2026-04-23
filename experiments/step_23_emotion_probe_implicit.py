@@ -25,8 +25,8 @@ ROOT = Path(__file__).resolve().parent.parent
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from gemma4_mlx_interp import Model, Probe, Prompt, PromptSet  # noqa: E402
-from gemma4_mlx_interp import (  # noqa: E402
+from mechbench_core import Model, Probe, Prompt, PromptSet  # noqa: E402
+from mechbench_core import (  # noqa: E402
     fact_vectors_pooled, grouped_row_heatmap, probe_diagonal_heatmap,
 )
 from experiments.prompts import (  # noqa: E402

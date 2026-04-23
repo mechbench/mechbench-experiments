@@ -3,7 +3,7 @@ creative/open-ended). Anchored against BIG_SWEEP_96 for geometric context."""
 
 from __future__ import annotations
 
-from gemma4_mlx_interp import Prompt, PromptSet
+from mechbench_core import Prompt, PromptSet
 
 # ---------------------------------------------------------------------------
 # Template variation: 4 phrasings of "what is the capital of X" * 4 countries.

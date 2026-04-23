@@ -24,7 +24,7 @@ a single subject token.
 
 from __future__ import annotations
 
-from gemma4_mlx_interp import Prompt, PromptSet
+from mechbench_core import Prompt, PromptSet
 
 
 _HAPPY = (

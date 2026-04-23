@@ -16,7 +16,7 @@ import time
 
 import mlx.core as mx
 
-from gemma4_mlx_interp import (
+from mechbench_core import (
     Capture, GLOBAL_LAYERS, Model, N_LAYERS,
 )
 

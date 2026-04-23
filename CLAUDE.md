@@ -1,8 +1,6 @@
-# mechbench-experiments (pre-rename: gemma4-mlx-interp)
+# mechbench-experiments
 
 Mechanistic interpretability experiments on Google's Gemma 4 models, running locally on Apple Silicon via MLX. A weekend-curiosity project that grew into the first chapter of the [mechbench](https://github.com/mechbench/mechbench) project family — the research-script + findings repo that consumes `mechbench-core` as its compute engine.
-
-**This repo is scheduled to be renamed to `mechbench-experiments`.** Treat the existing `gemma4-mlx-interp` name as provisional; new documentation and commit messages should reference the destination name.
 
 ## The mechbench family
 
@@ -15,17 +13,20 @@ This repo is one of eight in the family. See the [meta repo](https://github.com/
 
 If a user asks for work that belongs in one of those repos, push back. Research scripts, findings, essays, and prompt collections belong here; framework-level primitives belong in `mechbench-core`.
 
-## The framework snapshot at `gemma4_mlx_interp/`
+## Framework lives in `mechbench-core`
 
-The package at `gemma4_mlx_interp/` is a **local snapshot** of the framework code that has since been lifted into the standalone [`mechbench-core`](https://github.com/mechbench/mechbench-core) repo (where the package is now called `mechbench_core`). This repo still has 32 experiment scripts that import from `gemma4_mlx_interp`, so the local copy stays for now.
+Framework code — hook-aware forward, interventions, activation cache, lens, geometry, plot helpers — lives in the sibling [`mechbench-core`](https://github.com/mechbench/mechbench-core) repo and is imported here as `mechbench_core`. This repo previously carried a local snapshot at `gemma4_mlx_interp/`; that snapshot was deleted once the experiments were migrated to import from `mechbench_core` (task 000139).
 
-**Migrating the experiments to import from `mechbench-core` is a follow-up task** tracked in the meta repo's `tasks/mechbench-experiments/`. Until that migration lands:
+Framework bugfixes and new features go in `mechbench-core`. This repo holds only experiment scripts, project-specific prompt collections, findings, and essays.
 
-- Framework bugfixes should go into `mechbench-core` first, then optionally be synced here. Don't let the two diverge in behavior without a reason.
-- New framework features belong in `mechbench-core`, not here.
-- Experiment code should continue to work against the local `gemma4_mlx_interp/` package. When the migration task lands, all `from gemma4_mlx_interp import …` statements get rewritten to `from mechbench_core import …` in one pass.
+To set up a fresh venv for this repo you need both repos cloned side-by-side; `mechbench-core` is declared as a dependency but is currently installed editable from the sibling path:
 
-Public surface of the framework (snapshot; authoritative version is in `mechbench-core`):
+```
+pip install -e ../mechbench-core
+pip install -e .
+```
+
+Public surface of the framework (authoritative version is in `mechbench-core`):
 
 - **Forward + hooks:** `Model.load()`, `Model.run(input_ids, hooks={}, capture=[])`, `ActivationCache`. Hook-aware forward pass with 294 named hook points.
 - **Declarative interventions:** `Ablate` / `Capture` / `Patch`, plus `compose`. Pass as `interventions=[...]`.
@@ -36,7 +37,7 @@ Public surface of the framework (snapshot; authoritative version is in `mechbenc
 Quickstart:
 
 ```python
-from gemma4_mlx_interp import Model, Ablate, Capture
+from mechbench_core import Model, Ablate, Capture
 
 model = Model.load()
 ids = model.tokenize("Complete this sentence with one word: The Eiffel Tower is in")
@@ -45,7 +46,7 @@ result = model.run(ids)
 result = model.run(ids, interventions=[Ablate.layer(14)])
 ```
 
-Smoke tests: `python -m gemma4_mlx_interp._smoke` (forward path), `_smoke_interventions`, `_smoke_plots`. The integration test that reproduces findings 01/11/12 against this repo's prompt collections is in `experiments/smoke_analysis.py`.
+Smoke tests: `python -m mechbench_core._smoke` (forward path), `_smoke_interventions`, `_smoke_plots`. The integration test that reproduces findings 01/11/12 against this repo's prompt collections is in `experiments/smoke_analysis.py`.
 
 ## Environment
 
@@ -109,32 +110,12 @@ When something isn't working, **read the source of whatever is working first bef
 ## Files and directories
 
 ```
-gemma4-mlx-interp/              # (will become mechbench-experiments)
+mechbench-experiments/
 ├── .venv/                      # Python 3.11 venv (gitignored)
 ├── .claude/                    # editor/agent settings
 ├── CLAUDE.md                   # This file
+├── pyproject.toml              # Deps (mechbench-core + scikit-learn)
 ├── benchmark.py                # Latency benchmarks for Model.run + capture configs
-├── gemma4_mlx_interp/          # Local snapshot of mechbench-core (migration pending)
-│   ├── __init__.py
-│   ├── _arch.py                # E4B + E2B architectural constants
-│   ├── _forward.py             # Canonical hook-aware forward pass
-│   ├── model.py                # Model.load / Model.run / RunResult
-│   ├── cache.py                # ActivationCache
-│   ├── hooks.py                # HookInfo + name parser
-│   ├── interventions.py        # Ablate / Capture / Patch / compose
-│   ├── lens.py                 # logit_lens_final / logit_lens_per_position
-│   ├── geometry.py             # fact_vectors / centroid_decode / stats
-│   ├── probes.py               # Probe primitive
-│   ├── head_weights.py         # Static W_Q/W_K/W_V/W_O analysis
-│   ├── generate.py             # Text generation helpers
-│   ├── plot.py                 # Matplotlib helpers with project conventions
-│   ├── prompts.py              # Prompt + PromptSet
-│   ├── errors.py               # Framework errors
-│   ├── _smoke.py               # Forward-path smoke test
-│   ├── _smoke_e2b.py           # E2B variant smoke test
-│   ├── _smoke_interventions.py # Composition smoke test
-│   ├── _smoke_plots.py         # Plot helpers vs synthetic data
-│   └── README.md               # User-facing framework docs (snapshot)
 ├── experiments/                # Numbered scripts + project-specific data
 │   ├── prompts/                # Project-specific prompt collections
 │   │   ├── __init__.py
@@ -158,8 +139,8 @@ gemma4-mlx-interp/              # (will become mechbench-experiments)
 ```bash
 source .venv/bin/activate
 
-python -m gemma4_mlx_interp._smoke                 # smoke-test the framework
-python experiments/step_02_layer_ablation.py       # reproduce an experiment
+python -m mechbench_core._smoke                    # smoke-test the framework
+python experiments/step_02_layer_ablation.py      # reproduce an experiment
 python -c "import mlx_vlm, os; print(os.path.dirname(mlx_vlm.__file__))"
 ```
 

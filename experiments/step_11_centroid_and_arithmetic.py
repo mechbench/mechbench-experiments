@@ -24,7 +24,7 @@ ROOT = Path(__file__).resolve().parent.parent
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from gemma4_mlx_interp import (  # noqa: E402
+from mechbench_core import (  # noqa: E402
     Model, PromptSet, centroid_decode, fact_vectors_at,
 )
 from experiments.prompts import BIG_SWEEP_96  # noqa: E402
