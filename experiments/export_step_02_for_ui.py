@@ -25,6 +25,11 @@ from mechbench_core import (  # noqa: E402
     Model,
     N_LAYERS,
 )
+from mechbench_schema import (  # noqa: E402
+    AblationPrompt,
+    LayerAblationPayload,
+    LayerAggregates,
+)
 
 
 MIN_CONFIDENCE = 0.5
@@ -80,39 +85,39 @@ def main() -> None:
         if (layer + 1) % 6 == 0 or layer == N_LAYERS - 1:
             print(f"  layer {layer}: mean Δlogp = {float(damage[layer].mean()):+.3f}")
 
-    prompt_records = [
-        {
-            "text": text,
-            "target": target,
-            "top1_id": top1_id,
-            "baseline_logprob": round(baseline_lp, 4),
-            "damage": [round(float(v), 4) for v in damage[:, j]],
-        }
+    prompts = [
+        AblationPrompt(
+            text=text,
+            target=target,
+            top1_id=top1_id,
+            baseline_logprob=round(baseline_lp, 4),
+            damage=[round(float(v), 4) for v in damage[:, j]],
+        )
         for j, (text, target, top1_id, baseline_lp) in enumerate(validated)
     ]
 
-    mean_per_layer = damage.mean(axis=1)
-    median_per_layer = np.median(damage, axis=1)
-
-    payload = {
-        "experiment": "step_02_layer_ablation",
-        "description": (
+    payload = LayerAblationPayload(
+        experiment="step_02_layer_ablation",
+        description=(
             "Per-layer ablation: zero each of the 42 decoder blocks' "
             "residual-stream update one at a time and measure Δ log p of "
             "the model's own top-1 prediction on validated factual-recall "
             "prompts. More negative = more damaging to ablate."
         ),
-        "n_layers": N_LAYERS,
-        "global_layers": list(GLOBAL_LAYERS),
-        "model": "mlx-community/gemma-4-E4B-it-bf16",
-        "prompts": prompt_records,
-        "aggregates": {
-            "mean": [round(float(v), 4) for v in mean_per_layer],
-            "median": [round(float(v), 4) for v in median_per_layer],
-        },
-    }
+        model="mlx-community/gemma-4-E4B-it-bf16",
+        n_layers=N_LAYERS,
+        global_layers=list(GLOBAL_LAYERS),
+        prompts=prompts,
+        aggregates=LayerAggregates(
+            mean=[round(float(v), 4) for v in damage.mean(axis=1)],
+            median=[round(float(v), 4) for v in np.median(damage, axis=1)],
+        ),
+    )
 
-    output_path.write_text(json.dumps(payload, indent=2) + "\n")
+    output_path.write_text(
+        json.dumps(payload.model_dump(mode="json"), indent=2, ensure_ascii=False)
+        + "\n"
+    )
     print(f"\nWrote {output_path} ({output_path.stat().st_size} bytes)")
 
 

@@ -30,6 +30,11 @@ from mechbench_core import (  # noqa: E402
     accumulated_resid,
     logit_attrs,
 )
+from mechbench_schema import (  # noqa: E402
+    DlaPrompt,
+    DlaSweepPayload,
+    LayerAggregates,
+)
 
 
 DISTRACTORS: dict[str, str] = {
@@ -80,7 +85,7 @@ def main() -> None:
 
     n_prompts = len(FACTUAL_15.prompts)
     diffs = np.zeros((n_prompts, N_LAYERS), dtype=np.float32)
-    prompt_records: list[dict] = []
+    prompts: list[DlaPrompt] = []
 
     for p_idx, prompt in enumerate(FACTUAL_15.prompts):
         target = prompt.target
@@ -98,41 +103,41 @@ def main() -> None:
         diff_vec = (attrs[:, 0] - attrs[:, 1]).astype(np.float32)
         diffs[p_idx] = diff_vec
 
-        prompt_records.append(
-            {
-                "target": target,
-                "distractor": distractor,
-                "text": prompt.text,
-                "target_token_id": t_id,
-                "distractor_token_id": d_id,
-                "category": prompt.category or "",
-                "diffs": [round(float(v), 4) for v in diff_vec],
-            }
+        prompts.append(
+            DlaPrompt(
+                target=target,
+                distractor=distractor,
+                text=prompt.text,
+                target_token_id=t_id,
+                distractor_token_id=d_id,
+                category=prompt.category or "",
+                diffs=[round(float(v), 4) for v in diff_vec],
+            )
         )
 
-    mean_vec = diffs.mean(axis=0)
-    median_vec = np.median(diffs, axis=0)
-
-    payload = {
-        "experiment": "step_33_dla_factual_sweep",
-        "description": (
+    payload = DlaSweepPayload(
+        experiment="step_33_dla_factual_sweep",
+        description=(
             "Direct logit attribution across FACTUAL_15: per-prompt "
             "(target - distractor) logit difference at each layer's "
             "resid_post, projected through the tied unembed (no final-norm "
             "fold). Positive values indicate the cumulative residual prefers "
             "the target token; negative indicates distractor."
         ),
-        "n_layers": N_LAYERS,
-        "global_layers": list(GLOBAL_LAYERS),
-        "model": "mlx-community/gemma-4-E4B-it-bf16",
-        "prompts": prompt_records,
-        "aggregates": {
-            "mean": [round(float(v), 4) for v in mean_vec],
-            "median": [round(float(v), 4) for v in median_vec],
-        },
-    }
+        model="mlx-community/gemma-4-E4B-it-bf16",
+        n_layers=N_LAYERS,
+        global_layers=list(GLOBAL_LAYERS),
+        prompts=prompts,
+        aggregates=LayerAggregates(
+            mean=[round(float(v), 4) for v in diffs.mean(axis=0)],
+            median=[round(float(v), 4) for v in np.median(diffs, axis=0)],
+        ),
+    )
 
-    output_path.write_text(json.dumps(payload, indent=2) + "\n")
+    output_path.write_text(
+        json.dumps(payload.model_dump(mode="json"), indent=2, ensure_ascii=False)
+        + "\n"
+    )
     print(f"\nWrote {output_path} ({output_path.stat().st_size} bytes)")
 
 
