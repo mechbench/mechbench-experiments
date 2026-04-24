@@ -192,7 +192,18 @@
       "Read(/Users/benji/dev/mechbench/**)",
       "Read(//tmp/**)",
       "Write(//tmp/**)",
-      "Edit(//tmp/**)"
+      "Edit(//tmp/**)",
+      "Bash(set)",
+      "Bash(set *)",
+      "Bash(source *)",
+      "Bash(curl -s -X POST http://localhost:*)",
+      "Bash(curl -X POST http://localhost:*)",
+      "Bash(curl -s -X POST http://127.0.0.1:*)",
+      "Bash(curl -X POST http://127.0.0.1:*)",
+      "Bash(curl -s -X GET http://localhost:*)",
+      "Bash(curl -s -X GET http://127.0.0.1:*)",
+      "Bash(npx drizzle-kit generate)",
+      "Bash(npx drizzle-kit generate *)"
     ]
   }
 }
