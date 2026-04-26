@@ -97,6 +97,31 @@ The narrative that fits all the current data: the L23-style pivot is **a feature
 
 See [`step_38_dla_factual_sweep_gemma3_4b.md`](step_38_dla_factual_sweep_gemma3_4b.md) for the full 000190 writeup.
 
+## Update (2026-04-25 — first non-Gemma datapoint via Qwen 2.5)
+
+Task 000201 unblocked the cross-family question by adding mlx-lm-fallback support to mechbench-core. Step_39 ran the layer-ablation battery on Qwen 2.5 3B Instruct (the first non-Gemma model in the L23-pivot test series): 36 layers, every layer global attention (no hybrid pattern), no KV-sharing, no MatFormer, biased Q/K/V projections. 14/15 FACTUAL_15 prompts validated through the chat template.
+
+**Result: no L23-style pivot.** Top-5 by mean Δ log p: L0 (−15.56), L1 (−13.65), L22 (−2.18), L13 (−1.66), L31 (−1.15). Front-loaded with scattered mid-to-late activity but no concentrated peak. Closest in shape to E2B (front-loaded + weak mid-network distribution); structurally different from E4B (invisible-middle band L10-24 + L23 pivot).
+
+The fourth predictive test of the L23 generalization, the third negative result. The summary table now reads:
+
+| target | what was tested | result | tells us |
+|---|---|---|---|
+| 000188 (E2B) | KV-boundary specific-pivot framing | failed | pivot isn't *the boundary global* |
+| 000189 (Gemma 3 4B) | does pivot exist in non-E-series Gemma | no pivot | pivot isn't a generic Gemma feature |
+| 000190 (Gemma 3 4B) | depth-fraction framing (median ≈ 0.66) | failed (G3-4B median 0.088) | pivot isn't a depth-fraction artifact |
+| **000201 follow-up (Qwen 2.5 3B)** | does pivot exist in non-Gemma family | **no pivot** | **pivot isn't a generic small-transformer feature** |
+
+What survives all four tests: the L23 phenomenon is **specific to E-series Gemma 4** (or at minimum, to architectures with the fresh-K/V → KV-shared transition). What still needs testing to actually validate the surviving narrative: a non-Gemma-4-E model that *does* have the KV-sharing transition. There aren't any in mlx-lm or mlx-vlm that fit on this hardware; finding or building one is its own task.
+
+Three things this Qwen result decisively rules out:
+
+- The L23 pivot as a generic property of small-to-medium dense transformers (Qwen 2.5 3B and Gemma 3 4B both negative).
+- The L23 pivot as a chat-tuning / alignment artifact (all four tested models are instruct-tuned; only one shows it).
+- The L23 pivot as anything observable at the 3-4B scale class without the KV-sharing mechanism (three tests, three negatives).
+
+See [`step_39_layer_ablation_qwen2_5_3b.md`](../findings/step_39_layer_ablation_qwen2_5_3b.md) for the full writeup, including the methodology note on why two earlier passes (base + chat template, base + bare prompt) failed before the Instruct + chat-template path validated 14/15.
+
 ## Sources
 
 - [Gemma 3 Technical Report (arxiv 2503.19786)](https://arxiv.org/html/2503.19786v1)
