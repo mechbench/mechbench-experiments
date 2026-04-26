@@ -122,6 +122,46 @@ Three things this Qwen result decisively rules out:
 
 See [`step_39_layer_ablation_qwen2_5_3b.md`](../findings/step_39_layer_ablation_qwen2_5_3b.md) for the full writeup, including the methodology note on why two earlier passes (base + chat template, base + bare prompt) failed before the Instruct + chat-template path validated 14/15.
 
+## Update (2026-04-25 — Qwen 2.5 trio: 000204/205/206 land + 000190 needs revising)
+
+After step_39 landed, I ran the three other cross-family experiments on Qwen 2.5 3B Instruct (DLA factual sweep, sublayer ablation, perplexity probe — steps 40, 41, 42). Two findings revise the surviving narrative; one tightens it.
+
+**Commit-fraction reframe (000190 needs to be revisited).** Step_40's median commit fraction on Qwen 2.5 3B Instruct is **0.750**, close to the E-series cluster (E4B 0.690, E2B 0.657). The picture is now:
+
+| model | median commit frac | shape |
+|---|---|---|
+| E4B | 0.690 | tight cluster |
+| E2B | 0.657 | cluster + 2 outliers |
+| **Qwen 2.5 3B Instruct** | **0.750** | **cluster L20-L32 + 3 L0 outliers** |
+| Gemma 3 4B | 0.088 | bimodal: 7 L0 + 1 L33 |
+
+Three of four models cluster at depth-fraction ~0.7. **Gemma 3 4B is the outlier, not Qwen.** Task 000190's "depth-fraction candidate refuted" verdict was based on n=1 (Gemma 3 4B's anomalous bimodal distribution) and shouldn't have been generalized. A more careful version of the candidate, given the new data: *"most transformers commit at depth-fraction ~0.7 on FACTUAL_15-style prompts, but a subset of small heavily-Instruct-tuned models route the answer through embed-aligned representations and commit at L0 instead."* That's a hypothesis worth testing on more models, not a finding. See [`step_40_dla_factual_sweep_qwen2_5_3b.md`](../findings/step_40_dla_factual_sweep_qwen2_5_3b.md) for the full re-analysis.
+
+**Sublayer ablation cross-family pattern (000205 result).** Step_41's attn-vs-MLP decomposition on Qwen 2.5 3B Instruct shows distributed attn-criticality (top-5: L24, L27, L14, L31, L21 after the L0/L1 baseline) — *not* the single-isolated-attn-peak that defines E4B's L23. The "MLPs dominate" half of the step_04 finding reproduces; the "only L23 is attn-critical" half does not. Cross-family confirms that the single-attn-critical-layer pattern is Gemma-4-E-specific. See [`step_41_sublayer_ablation_qwen2_5_3b.md`](../findings/step_41_sublayer_ablation_qwen2_5_3b.md).
+
+**Lyra rotation (the surviving-narrative anchor) cross-family verdict (000206 result).** Step_42's perplexity probe on Qwen 2.5 3B Instruct shows two clean signals:
+
+1. **R² shape transfers.** Qwen R² curve rises smoothly from 0.44 at L0 to 0.674 at L24 (depth-fraction 0.667), then declines smoothly to 0.45 at L35. Same general shape as E4B/E2B; peak magnitude similar to E4B's.
+
+2. **The orthogonal-rotation signature does NOT transfer.** Sharpest consecutive cosine drop is L8→L9 = 0.730. Compare to E4B's L22→L23 = 0.033 (essentially orthogonal) and E2B's L13→L14 = 0.015. **Qwen has no layer boundary where the surprise direction rotates dramatically.**
+
+The mechanistic story for E4B's rotation was that the residual basis has to reset at the fresh-K/V → KV-shared transition because downstream KV-shared layers can't freshly read the keys. Qwen has no such transition, so the prediction was: *no equivalent rotation in Qwen*. That's exactly what step_42 shows. The absence of rotation **tightens the surviving narrative**: rotation is fresh-K/V → KV-shared transition specific.
+
+See [`step_42_perplexity_probe_qwen2_5_3b.md`](../findings/step_42_perplexity_probe_qwen2_5_3b.md) for the full writeup including the suggested next experiment (run step_42-equivalent on Gemma 3 4B Instruct to disambiguate "fresh-K/V → KV-shared specific" from "Gemma family specific").
+
+## Where the L23 narrative stands now
+
+After steps 35/36/37 (E2B), step_38 (Gemma 3 4B DLA), step_39/40/41/42 (Qwen 2.5 3B Instruct full quadruple), the picture has shifted but not collapsed:
+
+- **L23-pivot story core (E4B-only six-angle convergence):** unchanged.
+- **KV-boundary specific-layer framing:** rejected (000188).
+- **Depth-fraction at ~0.7 framing:** **partially recovered** — 3 of 4 models cluster there, Gemma 3 4B is an outlier needing a separate explanation (not a refutation of the framing).
+- **Lyra rotation as fresh-K/V → KV-shared specific:** **strengthened** by Qwen's clean negative.
+- **Single-attn-critical-layer pattern:** Gemma-4-E-specific (Qwen distributed, E2B partial-band).
+- **What's needed:** a model that *has* the KV-sharing transition but isn't Gemma 4 E (none currently fit on this hardware).
+
+Two of three cross-family results in this update tighten the surviving narrative; one (commit-fraction) loosens the 000190 conclusion.
+
 ## Sources
 
 - [Gemma 3 Technical Report (arxiv 2503.19786)](https://arxiv.org/html/2503.19786v1)
