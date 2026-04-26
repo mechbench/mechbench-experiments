@@ -149,16 +149,43 @@ The mechanistic story for E4B's rotation was that the residual basis has to rese
 
 See [`step_42_perplexity_probe_qwen2_5_3b.md`](../findings/step_42_perplexity_probe_qwen2_5_3b.md) for the full writeup including the suggested next experiment (run step_42-equivalent on Gemma 3 4B Instruct to disambiguate "fresh-K/V → KV-shared specific" from "Gemma family specific").
 
+## Update (2026-04-25 — Llama 3 family lands: 000208 closes)
+
+Task 000208 added Llama 3 family support to mechbench-core (`_forward_llama.py` + `model_type='llama'` arch dispatch via the mlx-lm fallback path). Step_43 ran the layer-ablation battery on Llama 3.2 3B Instruct (28 layers, GQA 24/8, all-global, no KV-sharing, no MatFormer, tied unembed); step_44 on Llama 3.1 8B Instruct (32 layers, GQA 32/8, all-global, untied unembed) — the same-scale-as-E4B comparison that 000208 explicitly called out.
+
+Both Llama datapoints land cleanly in the **front-loaded + last-layer, no mid-network pivot** bucket:
+
+| model | shape | top-3 most damaging | mid-network pivot? |
+|---|---|---|---|
+| Llama 3.2 3B Instruct | front-loaded + last | L0 (-11.4), L1 (-9.9), L27 (-2.5) | **no** |
+| Llama 3.1 8B Instruct | front-loaded + last | L0 (-12.2), L1 (-12.0), L31 (-1.7) | **no** |
+
+The 8B datapoint is the strongest control yet: 2.7× E4B's parameter count and 32 layers of depth (close enough to E4B's 42 that depth-fraction ~0.55 should produce something distinctive in the L17-L18 range if the phenomenon were depth-fraction-driven — it doesn't). **Pivot does not depend on scale or depth alone; the architectural transition is what's special.** See [`step_43_layer_ablation_llama3_2_3b.md`](../findings/step_43_layer_ablation_llama3_2_3b.md) and [`step_44_layer_ablation_llama3_1_8b.md`](../findings/step_44_layer_ablation_llama3_1_8b.md).
+
+Final-form layer-ablation cross-family scoreboard:
+
+| model | n_layers | mid-network pivot? |
+|---|---:|---|
+| Gemma 4 E4B | 42 | yes (six-angle convergence) |
+| Gemma 4 E2B | 30 | partial |
+| Gemma 3 4B | 34 | no |
+| Qwen 2.5 3B Instruct | 36 | no |
+| Llama 3.2 3B Instruct | 28 | no |
+| Llama 3.1 8B Instruct | 32 | no |
+
+Five non-Gemma-4-E datapoints across three architecturally distinct families. All five negative. The L23 phenomenon is confirmed Gemma-4-E-specific within the families on the table.
+
 ## Where the L23 narrative stands now
 
-After steps 35/36/37 (E2B), step_38 (Gemma 3 4B DLA), step_39/40/41/42 (Qwen 2.5 3B Instruct full quadruple), the picture has shifted but not collapsed:
+After steps 35/36/37 (E2B), step_38 (Gemma 3 4B DLA), step_39/40/41/42 (Qwen 2.5 3B Instruct full quadruple), step_43/44 (Llama 3.2 3B + 3.1 8B), the picture has shifted but not collapsed:
 
 - **L23-pivot story core (E4B-only six-angle convergence):** unchanged.
 - **KV-boundary specific-layer framing:** rejected (000188).
 - **Depth-fraction at ~0.7 framing:** **partially recovered** — 3 of 4 models cluster there, Gemma 3 4B is an outlier needing a separate explanation (not a refutation of the framing).
 - **Lyra rotation as fresh-K/V → KV-shared specific:** **strengthened** by Qwen's clean negative.
 - **Single-attn-critical-layer pattern:** Gemma-4-E-specific (Qwen distributed, E2B partial-band).
-- **What's needed:** a model that *has* the KV-sharing transition but isn't Gemma 4 E (none currently fit on this hardware).
+- **Cross-family layer-ablation negative space:** **strengthened** by Llama 3.2 3B + 3.1 8B (same-scale-as-E4B). Five non-Gemma-4-E datapoints across three families, all front-loaded + last-layer, none with a mid-network pivot.
+- **What's needed:** a model that *has* the KV-sharing transition but isn't Gemma 4 E (none currently fit on this hardware), or a Gemma 3 4B perplexity probe to disambiguate "fresh-K/V → KV-shared specific" from "Gemma family specific".
 
 Two of three cross-family results in this update tighten the surviving narrative; one (commit-fraction) loosens the 000190 conclusion.
 
