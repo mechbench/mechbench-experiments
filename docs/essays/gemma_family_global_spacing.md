@@ -65,7 +65,7 @@ We previously claimed the architectural pivot at L23 in E4B "generalizes across 
 
 ## Update (2026-04-25 — task 000188 refuted the KV-boundary candidate)
 
-I ran the predictive battery on E2B (steps 02, 04, 30/31, 33) — full writeup at [`e2b_pivot_kv_boundary.md`](e2b_pivot_kv_boundary.md). The framing's specific claim ("L14 is E2B's pivot, mirroring E4B's L23") **fails**:
+I ran the predictive battery on E2B (steps 02, 04, 30/31, 33) — full writeup at [`step_37_dla_factual_sweep_e2b.md`](step_37_dla_factual_sweep_e2b.md). The framing's specific claim ("L14 is E2B's pivot, mirroring E4B's L23") **fails**:
 
 - **step_02** (layer ablation): peak L6, L9 outranks L14 — opposite of null prediction.
 - **step_04** (sublayer ablation): L14 is the most attention-critical non-trivial layer, but L12-13 are nearly tied; null L9 unremarkable as predicted. Partial.
@@ -95,7 +95,7 @@ What's left intact is the **group-level** distinction (fresh-K/V globals do 5× 
 
 The narrative that fits all the current data: the L23-style pivot is **a feature of the fresh-K/V → KV-shared transition specifically**, not a feature of the boundary global, not a feature of fixed depth-fraction, and not a feature of Gemma-style transformers in general. Models that lack the transition (Gemma 3 family, Qwen 2.5 family — the latter to be confirmed via 000201) shouldn't show it; models that have the transition might or might not, depending on whether the architectural-pressure-concentration story scales (the open question for non-E-series Gemma 4, blocked on remote compute via 000194).
 
-See [`depth_fraction_pivot.md`](depth_fraction_pivot.md) for the full 000190 writeup.
+See [`step_38_dla_factual_sweep_gemma3_4b.md`](step_38_dla_factual_sweep_gemma3_4b.md) for the full 000190 writeup.
 
 ## Sources
 

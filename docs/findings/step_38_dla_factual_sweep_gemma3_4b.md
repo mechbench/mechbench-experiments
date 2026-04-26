@@ -67,7 +67,7 @@ The bimodal distribution (7/15 at L0) does invite the alternative hypothesis tha
 - Raw data: `caches/step_38_dla_factual_sweep_gemma3_4b.json` (gitignored)
 - E4B reference: [`mechbench-ui/public/data/step_33_dla_factual_sweep.json`](../../../mechbench-ui/public/data/step_33_dla_factual_sweep.json)
 - E2B reference: `caches/step_33_dla_factual_sweep_e2b.json` (gitignored)
-- Spacing finding (now requires another update): [`docs/findings/gemma4_global_spacing.md`](gemma4_global_spacing.md)
+- Spacing finding (now requires another update): [`docs/essays/gemma_family_global_spacing.md`](gemma_family_global_spacing.md)
 
 ## Appendix — recomputing E4B's commit fraction
 

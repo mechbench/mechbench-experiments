@@ -164,7 +164,7 @@ The remaining open question — does any specific layer in E2B carry an L23-styl
 
 Given two fails and two partials in steps 02/04/30/33, step_20 (homonym layer ablation) wasn't expected to flip the verdict. The framing is already refuted on the strongest tests it had. Skipping it for now; can come back if a future framing wants to use it.
 
-## Action on `gemma4_global_spacing.md`
+## Action on `gemma_family_global_spacing.md`
 
 Demote the "pivot = global immediately upstream of first_kv_shared" framing from "candidate generalization" to "rejected (predictive test failed on E2B)". Note the surviving group-level claim: fresh-K/V globals carry more attention-critical work than KV-shared globals.
 
@@ -173,4 +173,4 @@ Demote the "pivot = global immediately upstream of first_kv_shared" framing from
 - Battery script: [`experiments/step_35_layer_ablation_e2b.py`](../../experiments/step_35_layer_ablation_e2b.py)
 - E2B raw data: `mechbench-ui/public/data/step_35_layer_ablation_e2b.json`
 - E4B raw data (re-read): `mechbench-ui/public/data/step_02_layer_ablation.json`
-- Original framing: [`docs/findings/gemma4_global_spacing.md`](gemma4_global_spacing.md)
+- Original framing: [`docs/essays/gemma_family_global_spacing.md`](gemma_family_global_spacing.md)
