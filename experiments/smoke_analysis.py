@@ -56,7 +56,9 @@ from experiments.prompts import BIG_SWEEP_96, FACTUAL_15  # noqa: E402
 def main() -> int:
     print("Loading model...")
     t0 = time.perf_counter()
-    model = Model.load()
+    model = Model.load(
+        "mlx-community/gemma-4-E4B-it-bf16@448c70a4ea86b1ad4b492d6858540eb328210a3a"
+    )
     print(f"Loaded in {time.perf_counter() - t0:.1f}s.\n")
 
     all_pass = True

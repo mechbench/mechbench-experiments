@@ -156,7 +156,9 @@ def _run_axis(model, axis, probes, probe_order):
 def main():
     OUT_DIR.mkdir(exist_ok=True)
     print("Loading model...")
-    model = Model.load()
+    model = Model.load(
+        "mlx-community/gemma-4-E4B-it-bf16@448c70a4ea86b1ad4b492d6858540eb328210a3a"
+    )
 
     # ---- Build BOTH probe sets for direct comparison ----
     print(f"\n{'=' * 70}")

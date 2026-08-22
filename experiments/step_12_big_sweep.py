@@ -41,7 +41,9 @@ EXTRACT_LAYERS = [15, 30]
 def main():
     OUT_DIR.mkdir(exist_ok=True)
     print("Loading model...")
-    model = Model.load()
+    model = Model.load(
+        "mlx-community/gemma-4-E4B-it-bf16@448c70a4ea86b1ad4b492d6858540eb328210a3a"
+    )
 
     print(f"\nValidating {len(BIG_SWEEP_96)} prompts...\n")
     valid = BIG_SWEEP_96.validate(model, verbose=False, min_confidence=0.0)

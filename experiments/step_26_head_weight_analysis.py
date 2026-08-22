@@ -77,7 +77,9 @@ def analyze_head(model, layer: int, head: int, embed) -> dict:
 def main():
     OUT_DIR.mkdir(exist_ok=True)
     print("Loading model...")
-    model = Model.load()
+    model = Model.load(
+        "mlx-community/gemma-4-E4B-it-bf16@448c70a4ea86b1ad4b492d6858540eb328210a3a"
+    )
     print("Computing unit-normalized embedding matrix...")
     t0 = time.perf_counter()
     E_unit = _unit_normalized_embed(model)

@@ -81,7 +81,9 @@ def main() -> None:
     print(f"Output target: {output_path}")
 
     print("Loading model...")
-    model = Model.load()
+    model = Model.load(
+        "mlx-community/gemma-4-E4B-it-bf16@448c70a4ea86b1ad4b492d6858540eb328210a3a"
+    )
 
     n_prompts = len(FACTUAL_15.prompts)
     diffs = np.zeros((n_prompts, N_LAYERS), dtype=np.float32)

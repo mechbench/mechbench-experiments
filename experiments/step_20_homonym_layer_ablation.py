@@ -61,7 +61,9 @@ def _stats(vecs: np.ndarray, labels: np.ndarray, k: int) -> tuple[float, float, 
 def main():
     OUT_DIR.mkdir(exist_ok=True)
     print("Loading model...")
-    model = Model.load()
+    model = Model.load(
+        "mlx-community/gemma-4-E4B-it-bf16@448c70a4ea86b1ad4b492d6858540eb328210a3a"
+    )
 
     print(f"\nValidating {len(HOMONYM_CAPITAL_ALL)} prompts (no filtering)...")
     valid = HOMONYM_CAPITAL_ALL.validate(

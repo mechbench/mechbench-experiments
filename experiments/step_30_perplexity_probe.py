@@ -75,7 +75,9 @@ def _per_token_surprisals(logits_mx, token_ids_mx, content_start: int):
 def main():
     OUT_DIR.mkdir(exist_ok=True)
     print("Loading model...")
-    model = Model.load()
+    model = Model.load(
+        "mlx-community/gemma-4-E4B-it-bf16@448c70a4ea86b1ad4b492d6858540eb328210a3a"
+    )
 
     corpus = PromptSet(
         name="PERPLEXITY_PROBE_CORPUS",

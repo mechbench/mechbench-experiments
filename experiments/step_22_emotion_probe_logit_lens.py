@@ -78,7 +78,9 @@ def _probe_logits(model, probe: Probe) -> np.ndarray:
 def main():
     OUT_DIR.mkdir(exist_ok=True)
     print("Loading model...")
-    model = Model.load()
+    model = Model.load(
+        "mlx-community/gemma-4-E4B-it-bf16@448c70a4ea86b1ad4b492d6858540eb328210a3a"
+    )
 
     print("\nRebuilding emotion probes from corpus (see step_21)...")
     probes = _build_probes(model)

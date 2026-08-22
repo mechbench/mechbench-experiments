@@ -75,7 +75,9 @@ def _capital_token_ids(model) -> set[int]:
 def main():
     OUT_DIR.mkdir(exist_ok=True)
     print("Loading model...")
-    model = Model.load()
+    model = Model.load(
+        "mlx-community/gemma-4-E4B-it-bf16@448c70a4ea86b1ad4b492d6858540eb328210a3a"
+    )
 
     # ---- Build two candidate steering vectors ----
     # v_capital_raw: mean of A1's subject-position residuals at layer 30.

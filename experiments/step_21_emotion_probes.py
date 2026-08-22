@@ -50,7 +50,9 @@ POOL_START = 20  # skip chat-template header tokens
 def main():
     OUT_DIR.mkdir(exist_ok=True)
     print("Loading model...")
-    model = Model.load()
+    model = Model.load(
+        "mlx-community/gemma-4-E4B-it-bf16@448c70a4ea86b1ad4b492d6858540eb328210a3a"
+    )
 
     # ---- Validate both corpora (no filtering; we want all passages kept) ----
     print(f"\nValidating {len(EMOTION_STORIES_TINY)} emotion stories...")

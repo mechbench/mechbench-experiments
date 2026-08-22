@@ -58,7 +58,9 @@ def _last_logp(logits: mx.array) -> np.ndarray:
 def main():
     OUT_DIR.mkdir(exist_ok=True)
     print("Loading model...")
-    model = Model.load()
+    model = Model.load(
+        "mlx-community/gemma-4-E4B-it-bf16@448c70a4ea86b1ad4b492d6858540eb328210a3a"
+    )
 
     # ---- Validate prompts: keep ones the model is confident about ----
     print(f"\nValidating {len(PROMPTS)} prompts...\n")

@@ -200,7 +200,9 @@ def handle_job(model: Model, api: str, api_key: str, job: dict[str, Any]) -> Non
 
 def poll_loop(api: str, api_key: str) -> None:
     print("[agent] loading model...")
-    model = Model.load()
+    model = Model.load(
+        "mlx-community/gemma-4-E4B-it-bf16@448c70a4ea86b1ad4b492d6858540eb328210a3a"
+    )
     print("[agent] model loaded; polling.")
 
     backoff = POLL_INTERVAL_SECONDS

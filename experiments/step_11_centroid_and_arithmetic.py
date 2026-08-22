@@ -41,7 +41,9 @@ def _cos(a: np.ndarray, b: np.ndarray) -> float:
 
 def main():
     print("Loading model...")
-    model = Model.load()
+    model = Model.load(
+        "mlx-community/gemma-4-E4B-it-bf16@448c70a4ea86b1ad4b492d6858540eb328210a3a"
+    )
 
     # Pull the 40 prompts from BIG_SWEEP_96 in the 5 classic categories.
     five_cats = PromptSet(

@@ -51,7 +51,9 @@ TARGETS = (" Paris", " Berlin")
 
 def main() -> None:
     print("Loading model...")
-    model = Model.load()
+    model = Model.load(
+        "mlx-community/gemma-4-E4B-it-bf16@448c70a4ea86b1ad4b492d6858540eb328210a3a"
+    )
     n_heads = model.arch.n_heads
 
     ids = model.tokenize(PROMPT)

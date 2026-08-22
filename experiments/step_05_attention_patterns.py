@@ -54,7 +54,9 @@ def get_token_labels(tokenizer, input_ids: mx.array) -> list[str]:
 def main():
     OUT_DIR.mkdir(exist_ok=True)
     print("Loading model...")
-    model = Model.load()
+    model = Model.load(
+        "mlx-community/gemma-4-E4B-it-bf16@448c70a4ea86b1ad4b492d6858540eb328210a3a"
+    )
     capture = Capture.attn_weights(layers=list(GLOBAL_LAYERS))
 
     for prompt_idx, prompt in enumerate(ATTN_DEMO):
