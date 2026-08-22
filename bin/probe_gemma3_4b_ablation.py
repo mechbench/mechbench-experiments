@@ -8,8 +8,8 @@ hung indefinitely on this machine. We fall back to Gemma 3 4B
 (~7 GB at bf16) — same architectural question (no
 num_kv_shared_layers, 5:1 spacing rule), comfortable headroom.
 
-This script bypasses mechbench-core's hook system entirely
-because mechbench-core's forward path is hardcoded against
+This script bypasses mechbench-compute's hook system entirely
+because mechbench-compute's forward path is hardcoded against
 mlx_vlm.models.gemma4. We monkey-patch each TransformerBlock's
 __call__ to return its input unchanged for one ablated forward
 pass at a time. Crude but produces the per-layer Δ log p curve.

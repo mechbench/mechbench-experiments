@@ -33,7 +33,7 @@ ROOT = Path(__file__).resolve().parent.parent
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from mechbench_core import Ablate, Model  # noqa: E402
+from mechbench_compute import Ablate, Model  # noqa: E402
 from experiments.prompts.factual import FACTUAL_15  # noqa: E402
 from mechbench_schema import (  # noqa: E402
     AblationPrompt,

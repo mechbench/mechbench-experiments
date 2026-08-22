@@ -8,7 +8,7 @@
 
 Every prior experiment in this project has measured *what happens to the output* when we perturb the network — ablate a layer, zero a head, swap an activation. Direct logit attribution asks the dual question: decompose the residual stream at the final position into per-component contributions (per layer, per branch, per head), and project each one through the tied unembed to read off its *marginal* contribution to each target token's logit.
 
-This is the canonical circuit-analysis primitive in the mech-interp literature. We didn't have it until now — the capability landed as the first addition to `mechbench-core` after the extraction, via `accumulated_resid` / `decompose_resid` / `head_results` / `logit_attrs` (task 000105).
+This is the canonical circuit-analysis primitive in the mech-interp literature. We didn't have it until now — the capability landed as the first addition to `mechbench-compute` after the extraction, via `accumulated_resid` / `decompose_resid` / `head_results` / `logit_attrs` (task 000105).
 
 The implementation is deliberately minimal. It projects components through the linear unembed only, with no final-norm fold. TransformerLens optionally divides each component by the final RMSNorm's per-position scale to make the decomposition exactly additive with the model's output logits; we skip that step in v0. The practical consequence: magnitudes reported here are *raw linear projections* of the residual components, not model-calibrated logits. Relative rankings of contributions — which component writes more toward Paris than another — are preserved.
 

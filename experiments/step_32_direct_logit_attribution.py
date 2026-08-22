@@ -4,7 +4,7 @@ Canonical circuit-analysis question: on the prompt "the capital of France is",
 which components (layers, branches, heads) contribute most to the model
 preferring "Paris" over "Berlin"?
 
-Uses the new attribution primitives in mechbench_core:
+Uses the new attribution primitives in mechbench_compute:
 
     accumulated_resid   — per-layer residual stack
     decompose_resid     — per-branch (attn/mlp/gate) contributions
@@ -31,7 +31,7 @@ import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from mechbench_core import (  # noqa: E402
+from mechbench_compute import (  # noqa: E402
     Capture,
     GLOBAL_LAYERS,
     Model,

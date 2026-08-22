@@ -8,7 +8,7 @@ Each prompt has subject (for fact_vectors position lookup) and category
 
 from __future__ import annotations
 
-from mechbench_core import Prompt, PromptSet
+from mechbench_compute import Prompt, PromptSet
 
 BIG_SWEEP_96 = PromptSet(
     name="BIG_SWEEP_96",

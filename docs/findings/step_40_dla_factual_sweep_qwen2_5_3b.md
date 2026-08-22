@@ -4,7 +4,7 @@ DLA factual sweep (step_33 methodology) on Qwen 2.5 3B Instruct, the first non-G
 
 ## What I found
 
-15 prompts, 36 layers, all run through mechbench-core's mlx-lm fallback path (000201). Per-prompt commit-layer distribution:
+15 prompts, 36 layers, all run through mechbench-compute's mlx-lm fallback path (000201). Per-prompt commit-layer distribution:
 
 ```
 Paris/London         L27   (frac 0.750)

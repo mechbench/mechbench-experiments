@@ -8,7 +8,7 @@ Single-prompt layer ablation on `mlx-community/gemma-3-4b-it-bf16`:
 
 - Prompt: `"Complete this sentence with one word: The Eiffel Tower is in"`, rendered through `tokenizer.apply_chat_template` (Gemma 3 instruct demands the chat template; bare-prompt encoding produced a `' ____'` placeholder top-1 in a first attempt).
 - Method: replace `lm.layers[i]` in mlx-vlm's Gemma 3 layer list with an identity callable, run the forward, record Δ log p of the baseline top-1. Repeat for each of the 34 layers.
-- Note: this bypasses `mechbench-core` because mechbench-core's forward path is hardcoded to `mlx_vlm.models.gemma4`. A small one-off in `bin/probe_gemma3_4b_ablation.py`.
+- Note: this bypasses `mechbench-compute` because mechbench-compute's forward path is hardcoded to `mlx_vlm.models.gemma4`. A small one-off in `bin/probe_gemma3_4b_ablation.py`.
 
 ## Result
 

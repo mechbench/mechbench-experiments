@@ -6,7 +6,7 @@ The framing required a Gemma 3 4B median commit fraction in the 0.6-0.7 band.
 
 ## What I found
 
-step_38 — Gemma 3 4B FACTUAL_15 DLA sweep, run through the now-real mechbench-core hook system (000192 having landed in the same session).
+step_38 — Gemma 3 4B FACTUAL_15 DLA sweep, run through the now-real mechbench-compute hook system (000192 having landed in the same session).
 
 | model | n_layers | median commit frac | distribution |
 |---|---|---|---|

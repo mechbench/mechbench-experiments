@@ -19,7 +19,7 @@ import numpy as np
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from experiments.prompts.factual import FACTUAL_15  # noqa: E402
-from mechbench_core import (  # noqa: E402
+from mechbench_compute import (  # noqa: E402
     Ablate,
     GLOBAL_LAYERS,
     Model,

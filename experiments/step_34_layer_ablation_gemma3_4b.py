@@ -9,9 +9,9 @@ Gemma 4 E4B. The methodology is identical:
   - Aggregate to mean and median per layer; emit a
     LayerAblationPayload to mechbench-ui/public/data/.
 
-Originally bypassed mechbench-core (the framework was Gemma-4-only)
+Originally bypassed mechbench-compute (the framework was Gemma-4-only)
 and used `lm.layers[i] = identity` list-replacement on the raw
-mlx-vlm model. With task 000192 landed, mechbench-core has a real
+mlx-vlm model. With task 000192 landed, mechbench-compute has a real
 Gemma 3 forward path, so this script is now a straight
 `Model.load(...)` + `Ablate.layer(i)` invocation matching the
 Gemma 4 step_02 pattern.
@@ -31,7 +31,7 @@ ROOT = Path(__file__).resolve().parent.parent
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from mechbench_core import Ablate, Model  # noqa: E402
+from mechbench_compute import Ablate, Model  # noqa: E402
 from experiments.prompts.factual import FACTUAL_15  # noqa: E402
 from mechbench_schema import (  # noqa: E402
     AblationPrompt,
@@ -123,7 +123,7 @@ def main() -> None:
         description=(
             "Per-layer zero-ablation on Gemma 3 4B (34 layers, globals at "
             "[5, 11, 17, 23, 29], no num_kv_shared_layers). Through the real "
-            "mechbench-core hook system per task 000192. Counterpart to the "
+            "mechbench-compute hook system per task 000192. Counterpart to the "
             "Gemma 4 E4B step_02 figure."
         ),
         model=MODEL_ID,

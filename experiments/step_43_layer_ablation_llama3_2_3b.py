@@ -4,7 +4,7 @@ Same-scale Llama datapoint to compare against Qwen 2.5 3B Instruct
 (step_39) and Gemma 3 4B (step_34). Sets up the same-scale comparison
 we don't have at the 8B level yet.
 
-Per task 000208. Through mechbench-core's mlx-lm fallback path with
+Per task 000208. Through mechbench-compute's mlx-lm fallback path with
 the new Llama family forward (000201 + 000208).
 """
 
@@ -22,7 +22,7 @@ ROOT = Path(__file__).resolve().parent.parent
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from mechbench_core import Ablate, Model  # noqa: E402
+from mechbench_compute import Ablate, Model  # noqa: E402
 from experiments.prompts.factual import FACTUAL_15  # noqa: E402
 from mechbench_schema import (  # noqa: E402
     AblationPrompt,
@@ -113,7 +113,7 @@ def main() -> None:
             "Per-layer zero-ablation on Llama 3.2 3B Instruct (28 layers). "
             "Same-scale cross-family comparison against Qwen 2.5 3B Instruct "
             "(step_39) and Gemma 3 4B Instruct (step_34). Through "
-            "mechbench-core's mlx-lm fallback path + Llama 3 family forward "
+            "mechbench-compute's mlx-lm fallback path + Llama 3 family forward "
             "(000208)."
         ),
         model=MODEL_ID,

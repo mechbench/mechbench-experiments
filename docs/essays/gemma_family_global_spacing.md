@@ -1,6 +1,6 @@
 # Gemma 4 global-attention spacing: 5:1 in the family, 4:1 only for E2B
 
-The motivation for this writeup, from task [000125](https://github.com/mechbench/mechbench/blob/main/tasks/mechbench-core/done/000125-investigate-gemma-4-global-attention-spacing-rule-e4b-every.md): both Gemma 4 E4B and E2B have exactly 7 global-attention layers with the *last* layer always global, but the spacing between globals differs (E4B every 6th, E2B every 5th). Several hypotheses to disambiguate — depth-fraction of the pivot, count of KV-shared trailing layers, count of fresh-K/V globals, depth-band targeting, fixed compute budget. Web research closes the question by adding two more datapoints.
+The motivation for this writeup, from task [000125](https://github.com/mechbench/mechbench/blob/main/tasks/mechbench-compute/done/000125-investigate-gemma-4-global-attention-spacing-rule-e4b-every.md): both Gemma 4 E4B and E2B have exactly 7 global-attention layers with the *last* layer always global, but the spacing between globals differs (E4B every 6th, E2B every 5th). Several hypotheses to disambiguate — depth-fraction of the pivot, count of KV-shared trailing layers, count of fresh-K/V globals, depth-band targeting, fixed compute budget. Web research closes the question by adding two more datapoints.
 
 ## What the configs say
 
@@ -82,7 +82,7 @@ Both candidates that came out of 000125 (last-layer-global rule and KV-boundary 
 
 After 000188 demoted the KV-boundary candidate, the data left behind a depth-fraction candidate: across both Gemma 4 sizes, the median commit layer in step_33 lands at ~0.66 of network depth (E4B 0.690, E2B 0.657 — Δ 0.033). If real, this would predict the L23-style commit phenomenon in any sufficiently-deep transformer regardless of architectural mechanism.
 
-Task 000190 ran the prediction against Gemma 3 4B (now testable through the proper mechbench-core hook system after 000192 landed). **The depth-fraction candidate also fails** — Gemma 3 4B's median commit fraction is **0.088**, with a bimodal distribution (7 of 15 prompts commit at L0, one outlier at L33). Categorically different from the E-series 0.66 cluster — not a shifted version, a structurally different distribution.
+Task 000190 ran the prediction against Gemma 3 4B (now testable through the proper mechbench-compute hook system after 000192 landed). **The depth-fraction candidate also fails** — Gemma 3 4B's median commit fraction is **0.088**, with a bimodal distribution (7 of 15 prompts commit at L0, one outlier at L33). Categorically different from the E-series 0.66 cluster — not a shifted version, a structurally different distribution.
 
 Both candidate generalizations are now refuted predictively:
 
@@ -99,7 +99,7 @@ See [`step_38_dla_factual_sweep_gemma3_4b.md`](step_38_dla_factual_sweep_gemma3_
 
 ## Update (2026-04-25 — first non-Gemma datapoint via Qwen 2.5)
 
-Task 000201 unblocked the cross-family question by adding mlx-lm-fallback support to mechbench-core. Step_39 ran the layer-ablation battery on Qwen 2.5 3B Instruct (the first non-Gemma model in the L23-pivot test series): 36 layers, every layer global attention (no hybrid pattern), no KV-sharing, no MatFormer, biased Q/K/V projections. 14/15 FACTUAL_15 prompts validated through the chat template.
+Task 000201 unblocked the cross-family question by adding mlx-lm-fallback support to mechbench-compute. Step_39 ran the layer-ablation battery on Qwen 2.5 3B Instruct (the first non-Gemma model in the L23-pivot test series): 36 layers, every layer global attention (no hybrid pattern), no KV-sharing, no MatFormer, biased Q/K/V projections. 14/15 FACTUAL_15 prompts validated through the chat template.
 
 **Result: no L23-style pivot.** Top-5 by mean Δ log p: L0 (−15.56), L1 (−13.65), L22 (−2.18), L13 (−1.66), L31 (−1.15). Front-loaded with scattered mid-to-late activity but no concentrated peak. Closest in shape to E2B (front-loaded + weak mid-network distribution); structurally different from E4B (invisible-middle band L10-24 + L23 pivot).
 
@@ -151,7 +151,7 @@ See [`step_42_perplexity_probe_qwen2_5_3b.md`](../findings/step_42_perplexity_pr
 
 ## Update (2026-04-25 — Llama 3 family lands: 000208 closes)
 
-Task 000208 added Llama 3 family support to mechbench-core (`_forward_llama.py` + `model_type='llama'` arch dispatch via the mlx-lm fallback path). Step_43 ran the layer-ablation battery on Llama 3.2 3B Instruct (28 layers, GQA 24/8, all-global, no KV-sharing, no MatFormer, tied unembed); step_44 on Llama 3.1 8B Instruct (32 layers, GQA 32/8, all-global, untied unembed) — the same-scale-as-E4B comparison that 000208 explicitly called out.
+Task 000208 added Llama 3 family support to mechbench-compute (`_forward_llama.py` + `model_type='llama'` arch dispatch via the mlx-lm fallback path). Step_43 ran the layer-ablation battery on Llama 3.2 3B Instruct (28 layers, GQA 24/8, all-global, no KV-sharing, no MatFormer, tied unembed); step_44 on Llama 3.1 8B Instruct (32 layers, GQA 32/8, all-global, untied unembed) — the same-scale-as-E4B comparison that 000208 explicitly called out.
 
 Both Llama datapoints land cleanly in the **front-loaded + last-layer, no mid-network pivot** bucket:
 

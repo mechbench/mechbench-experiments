@@ -9,7 +9,7 @@ distribution lands in the same band, the framing graduates from
 across the family." If commits scatter or land elsewhere, the
 candidate fails predictively and we know to look harder.
 
-Through mechbench-core's now-real Gemma 3 hook system (000192).
+Through mechbench-compute's now-real Gemma 3 hook system (000192).
 
 Outputs JSON to mechbench-experiments/caches/.
 """
@@ -27,7 +27,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from experiments.prompts.factual import FACTUAL_15  # noqa: E402
-from mechbench_core import (  # noqa: E402
+from mechbench_compute import (  # noqa: E402
     Capture,
     Model,
     accumulated_resid,

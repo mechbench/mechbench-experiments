@@ -38,7 +38,7 @@ import numpy as np
 _THIS = Path(__file__).resolve()
 sys.path.insert(0, str(_THIS.parent.parent))
 
-from mechbench_core import Ablate, GLOBAL_LAYERS, Model, N_LAYERS  # noqa: E402
+from mechbench_compute import Ablate, GLOBAL_LAYERS, Model, N_LAYERS  # noqa: E402
 from mechbench_schema import (  # noqa: E402
     AblationPrompt,
     LayerAblationPayload,

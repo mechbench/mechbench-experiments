@@ -6,7 +6,7 @@ prompt, capture residuals at every layer, compute (target −
 distractor) via logit_attrs, find the commit layer (last layer
 where diff is still negative).
 
-Through mechbench-core's mlx-lm fallback path (000201).
+Through mechbench-compute's mlx-lm fallback path (000201).
 """
 
 from __future__ import annotations
@@ -22,7 +22,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from experiments.prompts.factual import FACTUAL_15  # noqa: E402
-from mechbench_core import (  # noqa: E402
+from mechbench_compute import (  # noqa: E402
     Capture,
     Model,
     accumulated_resid,

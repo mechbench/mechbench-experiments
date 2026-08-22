@@ -2,7 +2,7 @@
 
 Cross-family layer-ablation per task 000208. Same FACTUAL_15 methodology as step_02 (E4B), step_34 (Gemma 3 4B), step_35 (E2B), step_39 (Qwen 2.5 3B). First Llama datapoint on the cross-family L23-pivot scoreboard.
 
-Through mechbench-core's mlx-lm fallback path with the new Llama-family forward (000208 added the `_forward_llama.py` module + `model_type='llama'` arch dispatch).
+Through mechbench-compute's mlx-lm fallback path with the new Llama-family forward (000208 added the `_forward_llama.py` module + `model_type='llama'` arch dispatch).
 
 ## Architecture
 

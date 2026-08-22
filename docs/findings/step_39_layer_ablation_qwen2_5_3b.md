@@ -2,7 +2,7 @@
 
 The first non-Gemma datapoint in the L23-pivot cross-family series. Predictive validation pass for the surviving narrative from the 000125 / 000188 / 000189 / 000190 thread: *the L23-style pivot is fresh-K/V → KV-shared transition specific, not architecture-family-agnostic*. Qwen 2.5 has no KV-sharing, no MatFormer side-channel, no hybrid attention pattern; if the pivot generalizes anyway, the surviving narrative is wrong.
 
-Through mechbench-core's mlx-lm fallback path (000201).
+Through mechbench-compute's mlx-lm fallback path (000201).
 
 ## Methodological note up-front
 
@@ -73,7 +73,7 @@ What it doesn't rule out:
 
 ## Architectural note (Qwen 2.5)
 
-Qwen 2.5 3B has **biased Q/K/V projections** (Qwen 2.x specific; Gemma 3/4 use unbiased projections). Doesn't change the damage-curve interpretation but worth noting because mechbench-core's `_forward_qwen.py` carries that detail. Also: Qwen 2.5 3B uses **GQA with very tight group sizing** (16 attention heads / 2 KV heads = 8-to-1 ratio), more aggressive than Gemma 3/4's typical 4-to-1.
+Qwen 2.5 3B has **biased Q/K/V projections** (Qwen 2.x specific; Gemma 3/4 use unbiased projections). Doesn't change the damage-curve interpretation but worth noting because mechbench-compute's `_forward_qwen.py` carries that detail. Also: Qwen 2.5 3B uses **GQA with very tight group sizing** (16 attention heads / 2 KV heads = 8-to-1 ratio), more aggressive than Gemma 3/4's typical 4-to-1.
 
 The model is a **base-vs-instruct** distinction: the base 3B is a poor fit for FACTUAL_15 specifically because the prompt template is interpreted as fill-in-the-blank rather than completion. The Instruct variant works because chat-tuning makes "Complete this sentence with one word: X" be a question-answer interaction. This isn't a model-quality issue; it's a prompt-template mismatch.
 
@@ -81,5 +81,5 @@ The model is a **base-vs-instruct** distinction: the base 3B is a poor fit for F
 
 - Battery script: [`experiments/step_39_layer_ablation_qwen2_5_3b.py`](../../experiments/step_39_layer_ablation_qwen2_5_3b.py)
 - Raw data: [`mechbench-ui/public/data/step_39_layer_ablation_qwen2_5_3b.json`](../../../mechbench-ui/public/data/step_39_layer_ablation_qwen2_5_3b.json)
-- mechbench-core mlx-lm fallback: 000201 (now closed)
+- mechbench-compute mlx-lm fallback: 000201 (now closed)
 - Surviving narrative this is consistent with: [`docs/essays/gemma_family_global_spacing.md`](../essays/gemma_family_global_spacing.md)

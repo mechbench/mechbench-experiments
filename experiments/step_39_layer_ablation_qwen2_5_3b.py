@@ -4,7 +4,7 @@ The cross-family test: does the L23-style pivot exist outside the
 Gemma family? Mirrors step_02 (E4B), step_34 (Gemma 3 4B),
 step_35 (E2B) — same methodology, same FACTUAL_15 battery, same
 LayerAblationPayload schema for cross-model rendering. Through the
-mechbench-core hook system that 000201 just landed.
+mechbench-compute hook system that 000201 just landed.
 
 Qwen 2.5 3B specs (read from mlx-lm ModelArgs at load time):
   - 36 transformer layers
@@ -34,7 +34,7 @@ ROOT = Path(__file__).resolve().parent.parent
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from mechbench_core import Ablate, Model  # noqa: E402
+from mechbench_compute import Ablate, Model  # noqa: E402
 from experiments.prompts.factual import FACTUAL_15  # noqa: E402
 from mechbench_schema import (  # noqa: E402
     AblationPrompt,
@@ -140,7 +140,7 @@ def main() -> None:
             "Per-layer zero-ablation on Qwen 2.5 3B (36 layers, every layer "
             "is global attention, no KV-sharing, no MatFormer). First "
             "non-Gemma model in the L23-pivot cross-family series. Through "
-            "mechbench-core's mlx-lm-fallback path (000201)."
+            "mechbench-compute's mlx-lm-fallback path (000201)."
         ),
         model=MODEL_ID,
         n_layers=n_layers,

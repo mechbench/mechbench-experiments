@@ -16,7 +16,7 @@ import time
 
 import mlx.core as mx
 
-from mechbench_core import (
+from mechbench_compute import (
     Capture, GLOBAL_LAYERS, Model, N_LAYERS,
 )
 

@@ -28,7 +28,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from experiments.prompts.factual import FACTUAL_15  # noqa: E402
-from mechbench_core import (  # noqa: E402
+from mechbench_compute import (  # noqa: E402
     Capture,
     Model,
     accumulated_resid,

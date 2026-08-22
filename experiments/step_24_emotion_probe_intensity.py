@@ -35,8 +35,8 @@ ROOT = Path(__file__).resolve().parent.parent
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from mechbench_core import Model, Probe, Prompt, PromptSet  # noqa: E402
-from mechbench_core import fact_vectors_pooled, intensity_curve  # noqa: E402
+from mechbench_compute import Model, Probe, Prompt, PromptSet  # noqa: E402
+from mechbench_compute import fact_vectors_pooled, intensity_curve  # noqa: E402
 from experiments.prompts import (  # noqa: E402
     EMOTION_NEUTRAL_BASELINE, EMOTION_STORIES_TINY,
 )

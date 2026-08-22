@@ -24,7 +24,7 @@ a single subject token.
 
 from __future__ import annotations
 
-from mechbench_core import Prompt, PromptSet
+from mechbench_compute import Prompt, PromptSet
 
 
 _HAPPY = (

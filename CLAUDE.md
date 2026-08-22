@@ -1,32 +1,32 @@
 # mechbench-experiments
 
-Mechanistic interpretability experiments on Google's Gemma 4 models, running locally on Apple Silicon via MLX. A weekend-curiosity project that grew into the first chapter of the [mechbench](https://github.com/mechbench/mechbench) project family — the research-script + findings repo that consumes `mechbench-core` as its compute engine.
+Mechanistic interpretability experiments on Google's Gemma 4 models, running locally on Apple Silicon via MLX. A weekend-curiosity project that grew into the first chapter of the [mechbench](https://github.com/mechbench/mechbench) project family — the research-script + findings repo that consumes `mechbench-compute` as its compute engine.
 
 ## The mechbench family
 
 This repo is one of eight in the family. See the [meta repo](https://github.com/mechbench/mechbench) for the full map:
 
 - [`mechbench`](https://github.com/mechbench/mechbench) — vision, philosophy, cross-repo task backlog.
-- [`mechbench-core`](https://github.com/mechbench/mechbench-core) — the Python compute engine. **A snapshot of its source lives in this repo at `gemma4_mlx_interp/`** (see below).
+- [`mechbench-compute`](https://github.com/mechbench/mechbench-compute) — the Python compute engine. **A snapshot of its source lives in this repo at `gemma4_mlx_interp/`** (see below).
 - [`mechbench-schema`](https://github.com/mechbench/mechbench-schema) — typed emission contract (Pydantic + generated TS).
 - [`mechbench-ui`](https://github.com/mechbench/mechbench-ui), [`mechbench-runner`](https://github.com/mechbench/mechbench-runner), [`mechbench-remote`](https://github.com/mechbench/mechbench-remote), [`mechbench-memo`](https://github.com/mechbench/mechbench-memo), [`mechbench-skills`](https://github.com/mechbench/mechbench-skills) — scoped but not yet populated.
 
-If a user asks for work that belongs in one of those repos, push back. Research scripts, findings, essays, and prompt collections belong here; framework-level primitives belong in `mechbench-core`.
+If a user asks for work that belongs in one of those repos, push back. Research scripts, findings, essays, and prompt collections belong here; framework-level primitives belong in `mechbench-compute`.
 
-## Framework lives in `mechbench-core`
+## Framework lives in `mechbench-compute`
 
-Framework code — hook-aware forward, interventions, activation cache, lens, geometry, plot helpers — lives in the sibling [`mechbench-core`](https://github.com/mechbench/mechbench-core) repo and is imported here as `mechbench_core`. This repo previously carried a local snapshot at `gemma4_mlx_interp/`; that snapshot was deleted once the experiments were migrated to import from `mechbench_core` (task 000139).
+Framework code — hook-aware forward, interventions, activation cache, lens, geometry, plot helpers — lives in the sibling [`mechbench-compute`](https://github.com/mechbench/mechbench-compute) repo and is imported here as `mechbench_compute`. This repo previously carried a local snapshot at `gemma4_mlx_interp/`; that snapshot was deleted once the experiments were migrated to import from `mechbench_compute` (task 000139).
 
-Framework bugfixes and new features go in `mechbench-core`. This repo holds only experiment scripts, project-specific prompt collections, findings, and essays.
+Framework bugfixes and new features go in `mechbench-compute`. This repo holds only experiment scripts, project-specific prompt collections, findings, and essays.
 
-To set up a fresh venv for this repo you need both repos cloned side-by-side; `mechbench-core` is declared as a dependency but is currently installed editable from the sibling path:
+To set up a fresh venv for this repo you need both repos cloned side-by-side; `mechbench-compute` is declared as a dependency but is currently installed editable from the sibling path:
 
 ```
-pip install -e ../mechbench-core
+pip install -e ../mechbench-compute
 pip install -e .
 ```
 
-Public surface of the framework (authoritative version is in `mechbench-core`):
+Public surface of the framework (authoritative version is in `mechbench-compute`):
 
 - **Forward + hooks:** `Model.load()`, `Model.run(input_ids, hooks={}, capture=[])`, `ActivationCache`. Hook-aware forward pass with 294 named hook points.
 - **Declarative interventions:** `Ablate` / `Capture` / `Patch`, plus `compose`. Pass as `interventions=[...]`.
@@ -37,7 +37,7 @@ Public surface of the framework (authoritative version is in `mechbench-core`):
 Quickstart:
 
 ```python
-from mechbench_core import Model, Ablate, Capture
+from mechbench_compute import Model, Ablate, Capture
 
 model = Model.load()
 ids = model.tokenize("Complete this sentence with one word: The Eiffel Tower is in")
@@ -46,7 +46,7 @@ result = model.run(ids)
 result = model.run(ids, interventions=[Ablate.layer(14)])
 ```
 
-Smoke tests: `python -m mechbench_core._smoke` (forward path), `_smoke_interventions`, `_smoke_plots`. The integration test that reproduces findings 01/11/12 against this repo's prompt collections is in `experiments/smoke_analysis.py`.
+Smoke tests: `python -m mechbench_compute._smoke` (forward path), `_smoke_interventions`, `_smoke_plots`. The integration test that reproduces findings 01/11/12 against this repo's prompt collections is in `experiments/smoke_analysis.py`.
 
 ## Environment
 
@@ -114,7 +114,7 @@ mechbench-experiments/
 ├── .venv/                      # Python 3.11 venv (gitignored)
 ├── .claude/                    # editor/agent settings
 ├── CLAUDE.md                   # This file
-├── pyproject.toml              # Deps (mechbench-core + scikit-learn)
+├── pyproject.toml              # Deps (mechbench-compute + scikit-learn)
 ├── benchmark.py                # Latency benchmarks for Model.run + capture configs
 ├── experiments/                # Numbered scripts + project-specific data
 │   ├── prompts/                # Project-specific prompt collections
@@ -139,7 +139,7 @@ mechbench-experiments/
 ```bash
 source .venv/bin/activate
 
-python -m mechbench_core._smoke                    # smoke-test the framework
+python -m mechbench_compute._smoke                    # smoke-test the framework
 python experiments/step_02_layer_ablation.py      # reproduce an experiment
 python -c "import mlx_vlm, os; print(os.path.dirname(mlx_vlm.__file__))"
 ```

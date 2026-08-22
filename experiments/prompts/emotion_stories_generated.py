@@ -28,7 +28,7 @@ against the hand-curated corpus at the same emotion granularity.
 
 from __future__ import annotations
 
-from mechbench_core import Prompt, PromptSet
+from mechbench_compute import Prompt, PromptSet
 
 
 _HAPPY = (
