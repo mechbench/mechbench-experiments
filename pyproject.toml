@@ -10,8 +10,8 @@ requires-python = ">=3.11"
 license = { text = "MIT" }
 
 dependencies = [
-    "mechbench-compute>=0.1",
-    "mechbench-schema>=0.2",
+    "mechbench-compute>=0.9.1",
+    "mechbench-schema>=0.13",
     "scikit-learn>=1.7",
 ]
 
