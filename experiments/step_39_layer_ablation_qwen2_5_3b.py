@@ -135,7 +135,7 @@ def main() -> None:
             )
 
     payload = LayerAblationPayload(
-        experiment="step_39_layer_ablation_qwen2_5_3b",
+        protocol="step_39_layer_ablation_qwen2_5_3b",
         description=(
             "Per-layer zero-ablation on Qwen 2.5 3B (36 layers, every layer "
             "is global attention, no KV-sharing, no MatFormer). First "

@@ -97,7 +97,7 @@ def main() -> None:
     ]
 
     payload = LayerAblationPayload(
-        experiment="step_02_layer_ablation",
+        protocol="step_02_layer_ablation",
         description=(
             "Per-layer ablation: zero each of the 42 decoder blocks' "
             "residual-stream update one at a time and measure Δ log p of "

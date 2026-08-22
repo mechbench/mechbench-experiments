@@ -128,7 +128,7 @@ def main() -> None:
             )
 
     payload = LayerAblationPayload(
-        experiment="step_35_layer_ablation_e2b",
+        protocol="step_35_layer_ablation_e2b",
         description=(
             "Per-layer zero-ablation on Gemma 4 E2B (35 layers, globals at "
             "[4, 9, 14, 19, 24, 29, 34], first_kv_shared=15). Predictive test "

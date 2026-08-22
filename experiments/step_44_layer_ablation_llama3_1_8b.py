@@ -105,7 +105,7 @@ def main() -> None:
             )
 
     payload = LayerAblationPayload(
-        experiment="step_44_layer_ablation_llama3_1_8b",
+        protocol="step_44_layer_ablation_llama3_1_8b",
         description=(
             "Per-layer zero-ablation on Llama 3.1 8B Instruct (32 layers). "
             "Same-scale-as-E4B Llama datapoint for the cross-family "

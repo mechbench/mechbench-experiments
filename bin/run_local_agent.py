@@ -137,7 +137,7 @@ def run_layer_ablation(
         )
     ]
     return LayerAblationPayload(
-        experiment="run_local_agent:layer_ablation",
+        protocol="run_local_agent:layer_ablation",
         description=(
             "Single-prompt layer ablation: zero each decoder block's "
             "residual-stream update and measure Δ log p of the model's "

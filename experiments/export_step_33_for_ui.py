@@ -116,7 +116,7 @@ def main() -> None:
         )
 
     payload = DlaSweepPayload(
-        experiment="step_33_dla_factual_sweep",
+        protocol="step_33_dla_factual_sweep",
         description=(
             "Direct logit attribution across FACTUAL_15: per-prompt "
             "(target - distractor) logit difference at each layer's "
