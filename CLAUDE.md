@@ -9,7 +9,7 @@ This repo is one of eight in the family. See the [meta repo](https://github.com/
 - [`mechbench`](https://github.com/mechbench/mechbench) — vision, philosophy, cross-repo task backlog.
 - [`mechbench-core`](https://github.com/mechbench/mechbench-core) — the Python compute engine. **A snapshot of its source lives in this repo at `gemma4_mlx_interp/`** (see below).
 - [`mechbench-schema`](https://github.com/mechbench/mechbench-schema) — typed emission contract (Pydantic + generated TS).
-- [`mechbench-ui`](https://github.com/mechbench/mechbench-ui), [`mechbench-agent`](https://github.com/mechbench/mechbench-agent), [`mechbench-remote`](https://github.com/mechbench/mechbench-remote), [`mechbench-memo`](https://github.com/mechbench/mechbench-memo), [`mechbench-skills`](https://github.com/mechbench/mechbench-skills) — scoped but not yet populated.
+- [`mechbench-ui`](https://github.com/mechbench/mechbench-ui), [`mechbench-runner`](https://github.com/mechbench/mechbench-runner), [`mechbench-remote`](https://github.com/mechbench/mechbench-remote), [`mechbench-memo`](https://github.com/mechbench/mechbench-memo), [`mechbench-skills`](https://github.com/mechbench/mechbench-skills) — scoped but not yet populated.
 
 If a user asks for work that belongs in one of those repos, push back. Research scripts, findings, essays, and prompt collections belong here; framework-level primitives belong in `mechbench-core`.
 
