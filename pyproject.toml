@@ -15,5 +15,13 @@ dependencies = [
     "scikit-learn>=1.7",
 ]
 
+[project.optional-dependencies]
+# Matches the sibling repos, so `pip install -e '.[dev]'` works the
+# same way everywhere.
+dev = [
+    "pytest>=8",
+    "ruff>=0.6",
+]
+
 [tool.setuptools]
 py-modules = []
