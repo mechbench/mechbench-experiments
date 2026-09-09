@@ -11,7 +11,7 @@ license = { text = "MIT" }
 
 dependencies = [
     "mechbench-compute>=0.11",
-    "mechbench-schema>=0.13",
+    "mechbench-schema>=0.14",
     "scikit-learn>=1.7",
 ]
 
